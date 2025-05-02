@@ -1,40 +1,71 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { Trophy, PlusCircle, Edit, Trash2, Search } from 'lucide-react';
+import { Trophy, PlusCircle, Edit, Trash2, Search, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { useSuccessStories } from '@/hooks/use-success-stories';
 import AdminLayout from '@/components/admin/admin-layout';
-
-// Define proper success story type based on our existing application
-type SuccessStory = {
-  id: number;
-  name: string;
-  title: string;
-  content: string;
-  scholarshipName?: string | null;
-  createdAt: string;
-  // For new stories we might have this field
-  isPublished?: boolean; 
-};
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { SuccessStory } from '@shared/schema';
 
 const AdminSuccessStories = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
   
-  // Use our hooks/use-success-stories to get actual data
-  const { successStories, isLoading } = useSuccessStories();
+  // Use our hooks to get actual data
+  const { successStories, isLoading, error } = useSuccessStories();
 
-  // Filter success stories
-  const filteredSuccessStories = Array.isArray(successStories) 
-    ? successStories.filter(story => 
-        story.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        story.title.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : [];
+  // Create a delete mutation
+  const deleteStoryMutation = useMutation({
+    mutationFn: (id: number) => {
+      return apiRequest(`/api/success-stories/${id}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/success-stories'] });
+    },
+  });
+
+  // Create a publish/unpublish mutation
+  const togglePublishMutation = useMutation({
+    mutationFn: ({ id, isPublished }: { id: number; isPublished: boolean }) => {
+      return apiRequest(`/api/success-stories/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isPublished }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/success-stories'] });
+    },
+  });
+
+  // Handle story deletion
+  const handleDelete = (id: number, name: string) => {
+    if (window.confirm(`هل أنت متأكد من حذف قصة "${name}"؟`)) {
+      deleteStoryMutation.mutate(id);
+    }
+  };
+
+  // Toggle publish status
+  const togglePublish = (id: number, currentStatus: boolean | undefined) => {
+    // Set to true if undefined or false, and false if true
+    const newStatus = !(currentStatus === true);
+    togglePublishMutation.mutate({ id, isPublished: newStatus });
+  };
 
   // Handle navigation to create page
   const handleAddNew = () => {
     setLocation('/admin/success-stories/create');
   };
+
+  // Filter success stories
+  const filteredSuccessStories = Array.isArray(successStories) 
+    ? successStories.filter(story => 
+        story.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        story.title?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : [];
 
   // Actions for AdminLayout header
   const actions = (
@@ -47,14 +78,32 @@ const AdminSuccessStories = () => {
     </button>
   );
 
+  // Helper function to determine if a story is published
+  const isStoryPublished = (story: any) => {
+    return story.isPublished === true;
+  };
+
   // Count published and draft stories
   const publishedCount = Array.isArray(successStories) 
-    ? successStories.filter(s => s.isPublished === true).length 
+    ? successStories.filter(story => isStoryPublished(story)).length 
     : 0;
   
   const draftCount = Array.isArray(successStories) 
-    ? successStories.filter(s => s.isPublished === false || s.isPublished === undefined).length 
+    ? successStories.filter(story => !isStoryPublished(story)).length 
     : 0;
+
+  // Error handling
+  if (error) {
+    return (
+      <AdminLayout title="إدارة قصص النجاح" actions={actions}>
+        <div className="p-8 text-center bg-red-50 rounded-lg">
+          <AlertTriangle className="h-12 w-12 mx-auto text-red-500 mb-3" />
+          <p className="text-red-600 font-medium">حدث خطأ أثناء تحميل البيانات</p>
+          <p className="text-gray-600 mt-2">يرجى تحديث الصفحة أو المحاولة مرة أخرى لاحقًا</p>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout title="إدارة قصص النجاح" actions={actions}>
@@ -73,7 +122,7 @@ const AdminSuccessStories = () => {
 
       {/* Success Stories Table */}
       <div className="bg-white shadow-sm rounded-lg overflow-hidden">
-        {isLoading ? (
+        {isLoading || deleteStoryMutation.isPending || togglePublishMutation.isPending ? (
           <div className="p-8 text-center">
             <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>
             <p className="mt-4">جاري تحميل البيانات...</p>
@@ -104,7 +153,7 @@ const AdminSuccessStories = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredSuccessStories.map((story, index) => (
+                {filteredSuccessStories.map((story: any, index) => (
                   <tr key={story.id} className="border-b hover:bg-gray-50">
                     <td className="px-6 py-4 font-medium text-gray-900">{index + 1}</td>
                     <td className="px-6 py-4">{story.name}</td>
@@ -116,23 +165,41 @@ const AdminSuccessStories = () => {
                       {new Date(story.createdAt).toLocaleDateString('ar-SA')}
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        story.isPublished === true
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-yellow-100 text-yellow-700'
-                      }`}>
-                        {story.isPublished === true ? 'منشور' : 'مسودة'}
-                      </span>
+                      <button
+                        onClick={() => togglePublish(story.id, isStoryPublished(story))}
+                        className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${
+                          isStoryPublished(story) 
+                            ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                            : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                        }`}
+                      >
+                        {isStoryPublished(story) ? (
+                          <>
+                            <CheckCircle className="h-3.5 w-3.5" />
+                            <span>منشور</span>
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="h-3.5 w-3.5" />
+                            <span>مسودة</span>
+                          </>
+                        )}
+                      </button>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => setLocation(`/admin/success-stories/edit/${story.id}`)}
-                          className="text-blue-500 hover:text-blue-700"
+                          className="text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50"
+                          title="تعديل"
                         >
                           <Edit className="h-5 w-5" />
                         </button>
-                        <button className="text-red-500 hover:text-red-700">
+                        <button 
+                          onClick={() => handleDelete(story.id, story.name)}
+                          className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50"
+                          title="حذف"
+                        >
                           <Trash2 className="h-5 w-5" />
                         </button>
                       </div>
@@ -166,7 +233,7 @@ const AdminSuccessStories = () => {
               <p className="text-2xl font-bold">{publishedCount}</p>
             </div>
             <div className="bg-green-50 p-3 rounded-full">
-              <div className="h-6 w-6 text-green-600 flex items-center justify-center">✓</div>
+              <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
           </div>
         </div>
@@ -178,7 +245,7 @@ const AdminSuccessStories = () => {
               <p className="text-2xl font-bold">{draftCount}</p>
             </div>
             <div className="bg-yellow-50 p-3 rounded-full">
-              <div className="h-6 w-6 text-yellow-600 flex items-center justify-center">⚙️</div>
+              <XCircle className="h-6 w-6 text-yellow-600" />
             </div>
           </div>
         </div>
