@@ -1,5 +1,22 @@
-import React, { useRef, useState } from 'react';
-import { Editor } from '@tinymce/tinymce-react';
+import React, { useRef, useState, useCallback } from 'react';
+import { useEditor, EditorContent, BubbleMenu, FloatingMenu, JSONContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Image from '@tiptap/extension-image';
+import Link from '@tiptap/extension-link';
+import Placeholder from '@tiptap/extension-placeholder';
+import TextAlign from '@tiptap/extension-text-align';
+import Underline from '@tiptap/extension-underline';
+import TextStyle from '@tiptap/extension-text-style';
+import Color from '@tiptap/extension-color';
+import Highlight from '@tiptap/extension-highlight';
+import Typography from '@tiptap/extension-typography';
+// import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+import CharacterCount from '@tiptap/extension-character-count';
+import Heading from '@tiptap/extension-heading';
+import Table from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableCell from '@tiptap/extension-table-cell';
+import TableHeader from '@tiptap/extension-table-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -19,7 +36,35 @@ import {
   TabsTrigger
 } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { AlertCircle, CheckCircle, Edit, Image, BarChart2, Search, Settings, FileText } from 'lucide-react';
+import { 
+  AlertCircle, 
+  CheckCircle, 
+  Edit, 
+  Image as ImageIcon, 
+  BarChart2, 
+  Search, 
+  Settings, 
+  FileText, 
+  Bold, 
+  Italic, 
+  Underline as UnderlineIcon, 
+  List, 
+  ListOrdered, 
+  Code, 
+  AlignLeft, 
+  AlignCenter, 
+  AlignRight, 
+  Heading1, 
+  Heading2, 
+  Heading3, 
+  Strikethrough, 
+  Link as LinkIcon, 
+  Table as TableIcon,
+  RotateCcw,
+  RotateCw,
+  Highlighter,
+  Palette
+} from 'lucide-react';
 import { 
   Tooltip,
   TooltipContent,
@@ -27,6 +72,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Badge } from '@/components/ui/badge';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface RichEditorProps {
   initialValue?: string;
@@ -65,7 +115,6 @@ export default function RichEditor({
   readOnly = false,
   className = '',
 }: RichEditorProps) {
-  const editorRef = useRef<any>(null);
   const [content, setContent] = useState(initialValue);
   const [activeTab, setActiveTab] = useState('editor');
   const [wordCount, setWordCount] = useState(0);
@@ -73,26 +122,86 @@ export default function RichEditor({
   const [readability, setReadability] = useState(0);
   const [seoAnalysis, setSeoAnalysis] = useState<Array<{text: string, status: 'good' | 'warning' | 'bad', score: number}>>([]);
   const [readabilityAnalysis, setReadabilityAnalysis] = useState<Array<{text: string, status: 'good' | 'warning' | 'bad', score: number}>>([]);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [isLinkPopoverOpen, setIsLinkPopoverOpen] = useState(false);
+  const [isImagePopoverOpen, setIsImagePopoverOpen] = useState(false);
   
-  // استخدام المفتاح المخزن في متغيرات البيئة
-  const apiKey = import.meta.env.VITE_TINYMCE_API_KEY || 'q471jgf8f3tf021wog7g5ja3spibypjg739h8z86gbz2fi6h';
-  
-  // التغييرات في المحتوى
-  const handleEditorChange = (newContent: string) => {
-    setContent(newContent);
-    onChange(newContent);
-    
-    // حساب عدد الكلمات
-    const textContent = stripHtml(newContent);
-    const words = textContent.trim().split(/\s+/).filter(word => word.length > 0);
-    setWordCount(words.length);
-    
-    // تحليل SEO وقابلية القراءة إذا كان هناك كلمة رئيسية
-    if (focusKeyword) {
-      analyzeSeo(newContent, focusKeyword, seoTitle, seoDescription);
-      analyzeReadability(textContent);
-    }
-  };
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: false, // we'll configure it separately
+        codeBlock: false, // we'll use CodeBlockLowlight instead
+      }),
+      Placeholder.configure({
+        placeholder,
+        emptyEditorClass: 'is-editor-empty',
+      }),
+      Image.configure({
+        inline: false,
+        allowBase64: true,
+      }),
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          rel: 'noopener noreferrer',
+          target: '_blank',
+        },
+      }),
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+        alignments: ['left', 'center', 'right'],
+        defaultAlignment: dir === 'rtl' ? 'right' : 'left',
+      }),
+      Underline,
+      TextStyle,
+      Color,
+      Highlight.configure({
+        multicolor: true,
+      }),
+      Typography,
+      CharacterCount.configure({
+        limit: 10000,
+      }),
+      Heading.configure({
+        levels: [1, 2, 3],
+      }),
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
+      CodeBlockLowlight.configure({
+        lowlight,
+      }),
+    ],
+    editorProps: {
+      attributes: {
+        dir,
+        class: 'prose prose-lg dark:prose-invert focus:outline-none p-4 rounded-md min-h-[300px]',
+        style: `height: ${typeof height === 'number' ? `${height}px` : height}; min-height: ${typeof minHeight === 'number' ? `${minHeight}px` : minHeight};`,
+      },
+    },
+    content: initialValue,
+    editable: !readOnly,
+    onUpdate: ({ editor }) => {
+      const html = editor.getHTML();
+      setContent(html);
+      onChange(html);
+      
+      // حساب عدد الكلمات
+      const textContent = stripHtml(html);
+      const words = textContent.trim().split(/\s+/).filter(word => word.length > 0);
+      setWordCount(words.length);
+      
+      // تحليل SEO وقابلية القراءة إذا كان هناك كلمة رئيسية
+      if (focusKeyword) {
+        analyzeSeo(html, focusKeyword, seoTitle, seoDescription);
+        analyzeReadability(textContent);
+      }
+    },
+  });
   
   // تحليل السيو
   const analyzeSeo = (content: string, keyword: string, title: string, description: string) => {
@@ -439,8 +548,70 @@ export default function RichEditor({
     return doc.body.textContent || '';
   };
   
+  // وظائف التحرير
+  const addLink = useCallback(() => {
+    if (!editor) return;
+    
+    if (linkUrl) {
+      // إضافة الرابط
+      editor
+        .chain()
+        .focus()
+        .extendMarkRange('link')
+        .setLink({ href: linkUrl, target: '_blank' })
+        .run();
+      
+      setLinkUrl('');
+      setIsLinkPopoverOpen(false);
+    } else if (editor.isActive('link')) {
+      // إزالة الرابط
+      editor
+        .chain()
+        .focus()
+        .extendMarkRange('link')
+        .unsetLink()
+        .run();
+    }
+  }, [editor, linkUrl]);
+  
+  const addImage = useCallback(() => {
+    if (!editor || !imageUrl) return;
+    
+    editor
+      .chain()
+      .focus()
+      .setImage({ src: imageUrl, alt: 'صورة' })
+      .run();
+    
+    setImageUrl('');
+    setIsImagePopoverOpen(false);
+  }, [editor, imageUrl]);
+  
+  // التعامل مع اتجاه النص
+  const changeDirection = useCallback((newDir: 'rtl' | 'ltr') => {
+    if (!editor) return;
+    
+    editor.commands.updateAttributes('root', { dir: newDir });
+  }, [editor]);
+  
+  // إضافة جدول
+  const addTable = useCallback(() => {
+    if (!editor) return;
+    
+    editor
+      .chain()
+      .focus()
+      .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+      .run();
+  }, [editor]);
+  
+  // منع التحرير إذا كان للقراءة فقط
+  if (readOnly && editor) {
+    editor.setEditable(false);
+  }
+  
   return (
-    <div className={`rich-editor ${className}`}>
+    <div className={`rich-editor ${className}`} style={{ direction: dir }}>
       <Tabs defaultValue="editor" value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-4 bg-white dark:bg-gray-800 border">
           <TabsTrigger value="editor">
@@ -466,375 +637,658 @@ export default function RichEditor({
             <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
               <FileText className="h-3 w-3" />
               <span>{wordCount} كلمة</span>
+              {editor && (
+                <span className="mr-auto">
+                  {editor.storage.characterCount.characters()} حرفاً
+                </span>
+              )}
             </div>
           )}
           
-          <Editor
-            apiKey={apiKey}
-            onInit={(evt: any, editor: any) => editorRef.current = editor}
-            initialValue={initialValue}
-            value={content}
-            onEditorChange={handleEditorChange}
-            init={{
-              height,
-              min_height: minHeight,
-              plugins: [
-                'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
-                'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                'insertdatetime', 'media', 'table', 'preview', 'help', 'wordcount',
-                'directionality', 'emoticons', 'codesample', 'pagebreak', 'nonbreaking', 
-                'autoresize'
-              ],
-              toolbar1: 'undo redo | styles | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | numlist bullist | link image | ltr rtl | preview',
-              toolbar2: 'forecolor backcolor | removeformat | table | pagebreak | emoticons | visualblocks | searchreplace | codesample | fullscreen',
-              content_style: 'body { font-family:Arial,Helvetica,sans-serif; font-size:14px }',
-              menubar: true,
-              statusbar: true,
-              resize: true,
-              branding: false,
-              promotion: false,
-              directionality: dir,
-              language: 'ar',
-              placeholder: placeholder,
-              readonly: readOnly,
-              block_formats: 'Paragraph=p; Heading 1=h1; Heading 2=h2; Heading 3=h3; Heading 4=h4; Heading 5=h5; Heading 6=h6;',
-              setup: (editor: any) => {
-                editor.on('WordCountUpdate', function(e: any) {
-                  setWordCount(e.wordCount);
-                });
-              },
-              images_upload_handler: (blobInfo: any, progress: any) => new Promise((resolve, reject) => {
-                // هنا يمكن إضافة منطق رفع الصور إلى الخادم
-                const reader = new FileReader();
-                reader.onload = () => {
-                  resolve(reader.result as string);
-                };
-                reader.onerror = () => {
-                  reject('حدث خطأ أثناء قراءة الملف');
-                };
-                reader.readAsDataURL(blobInfo.blob());
-              }),
-              inline_styles: true,
-              visual: true,
-              browser_spellcheck: true,
-              contextmenu: false,
-              entity_encoding: 'raw'
-            }}
-          />
+          {editor && (
+            <div className="border rounded-md mb-3">
+              <div className="bg-muted py-1 px-2 flex flex-wrap gap-1 items-center border-b">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className={`h-8 w-8 ${editor.isActive('bold') ? 'bg-accent' : ''}`}
+                        onClick={() => editor.chain().focus().toggleBold().run()}
+                        disabled={readOnly}
+                      >
+                        <Bold className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>عريض</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className={`h-8 w-8 ${editor.isActive('italic') ? 'bg-accent' : ''}`}
+                        onClick={() => editor.chain().focus().toggleItalic().run()}
+                        disabled={readOnly}
+                      >
+                        <Italic className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>مائل</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className={`h-8 w-8 ${editor.isActive('underline') ? 'bg-accent' : ''}`}
+                        onClick={() => editor.chain().focus().toggleUnderline().run()}
+                        disabled={readOnly}
+                      >
+                        <UnderlineIcon className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>تسطير</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className={`h-8 w-8 ${editor.isActive('strike') ? 'bg-accent' : ''}`}
+                        onClick={() => editor.chain().focus().toggleStrike().run()}
+                        disabled={readOnly}
+                      >
+                        <Strikethrough className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>خط في المنتصف</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <div className="w-px h-6 bg-border mx-1" />
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className={`h-8 w-8 ${editor.isActive('heading', { level: 1 }) ? 'bg-accent' : ''}`}
+                        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+                        disabled={readOnly}
+                      >
+                        <Heading1 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>عنوان 1</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className={`h-8 w-8 ${editor.isActive('heading', { level: 2 }) ? 'bg-accent' : ''}`}
+                        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+                        disabled={readOnly}
+                      >
+                        <Heading2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>عنوان 2</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className={`h-8 w-8 ${editor.isActive('heading', { level: 3 }) ? 'bg-accent' : ''}`}
+                        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+                        disabled={readOnly}
+                      >
+                        <Heading3 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>عنوان 3</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <div className="w-px h-6 bg-border mx-1" />
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className={`h-8 w-8 ${editor.isActive('bulletList') ? 'bg-accent' : ''}`}
+                        onClick={() => editor.chain().focus().toggleBulletList().run()}
+                        disabled={readOnly}
+                      >
+                        <List className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>قائمة نقطية</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className={`h-8 w-8 ${editor.isActive('orderedList') ? 'bg-accent' : ''}`}
+                        onClick={() => editor.chain().focus().toggleOrderedList().run()}
+                        disabled={readOnly}
+                      >
+                        <ListOrdered className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>قائمة مرقمة</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <div className="w-px h-6 bg-border mx-1" />
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className={`h-8 w-8 ${editor.isActive({ textAlign: 'left' }) ? 'bg-accent' : ''}`}
+                        onClick={() => editor.chain().focus().setTextAlign('left').run()}
+                        disabled={readOnly}
+                      >
+                        <AlignLeft className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>محاذاة لليسار</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className={`h-8 w-8 ${editor.isActive({ textAlign: 'center' }) ? 'bg-accent' : ''}`}
+                        onClick={() => editor.chain().focus().setTextAlign('center').run()}
+                        disabled={readOnly}
+                      >
+                        <AlignCenter className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>محاذاة للوسط</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className={`h-8 w-8 ${editor.isActive({ textAlign: 'right' }) ? 'bg-accent' : ''}`}
+                        onClick={() => editor.chain().focus().setTextAlign('right').run()}
+                        disabled={readOnly}
+                      >
+                        <AlignRight className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>محاذاة لليمين</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <div className="w-px h-6 bg-border mx-1" />
+                
+                <Popover open={isLinkPopoverOpen} onOpenChange={setIsLinkPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className={`h-8 w-8 ${editor.isActive('link') ? 'bg-accent' : ''}`}
+                      disabled={readOnly}
+                    >
+                      <LinkIcon className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80">
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="link-url">رابط URL</Label>
+                      <div className="flex gap-2">
+                        <Input 
+                          id="link-url"
+                          placeholder="https://example.com"
+                          value={linkUrl}
+                          onChange={(e) => setLinkUrl(e.target.value)}
+                        />
+                        <Button onClick={addLink}>إضافة</Button>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                
+                <Popover open={isImagePopoverOpen} onOpenChange={setIsImagePopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="h-8 w-8"
+                      disabled={readOnly}
+                    >
+                      <ImageIcon className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80">
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="image-url">رابط الصورة</Label>
+                      <div className="flex gap-2">
+                        <Input 
+                          id="image-url"
+                          placeholder="https://example.com/image.jpg"
+                          value={imageUrl}
+                          onChange={(e) => setImageUrl(e.target.value)}
+                        />
+                        <Button onClick={addImage}>إضافة</Button>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className={`h-8 w-8 ${editor.isActive('table') ? 'bg-accent' : ''}`}
+                        onClick={addTable}
+                        disabled={readOnly}
+                      >
+                        <TableIcon className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>إضافة جدول</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className={`h-8 w-8 ${editor.isActive('codeBlock') ? 'bg-accent' : ''}`}
+                        onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+                        disabled={readOnly}
+                      >
+                        <Code className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>كتلة كود</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="h-8 w-8"
+                      disabled={readOnly}
+                    >
+                      <Highlighter className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-56">
+                    <div className="grid grid-cols-5 gap-1">
+                      {['yellow', 'red', 'green', 'blue', 'purple'].map((color) => (
+                        <Button
+                          key={color}
+                          variant="outline"
+                          className="h-8 w-8 p-0"
+                          style={{ backgroundColor: color }}
+                          onClick={() => editor.chain().focus().toggleHighlight({ color }).run()}
+                        />
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="h-8 w-8"
+                      disabled={readOnly}
+                    >
+                      <Palette className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-56">
+                    <div className="grid grid-cols-5 gap-1">
+                      {['#000000', '#0000ff', '#ff0000', '#008000', '#800080', '#ffa500', '#a52a2a', '#808080'].map((color) => (
+                        <Button
+                          key={color}
+                          variant="outline"
+                          className="h-8 w-8 p-0"
+                          style={{ backgroundColor: color }}
+                          onClick={() => editor.chain().focus().setColor(color).run()}
+                        />
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                
+                <div className="w-px h-6 bg-border mx-1" />
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => editor.chain().focus().undo().run()}
+                        disabled={readOnly || !editor.can().undo()}
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>تراجع</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => editor.chain().focus().redo().run()}
+                        disabled={readOnly || !editor.can().redo()}
+                      >
+                        <RotateCw className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>إعادة</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              
+              <div className="overflow-hidden">
+                <EditorContent 
+                  editor={editor} 
+                  className="border-0"
+                />
+              </div>
+            </div>
+          )}
         </TabsContent>
         
         <TabsContent value="seo" className="mt-0">
-          <div className="space-y-4">
-            <Card className="border shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center justify-between">
-                  <span>إعدادات SEO</span>
-                  {seoScore > 0 && (
-                    <Badge variant={seoScore >= 70 ? 'success' : seoScore >= 40 ? 'warning' : 'destructive'} className="ml-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">تحسين محركات البحث (SEO)</CardTitle>
+              <CardDescription>تحليل وتحسين المحتوى لمحركات البحث</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="seoTitle">عنوان الصفحة (Title)</Label>
+                <Input
+                  id="seoTitle"
+                  value={seoTitle}
+                  onChange={(e) => onSeoTitleChange && onSeoTitleChange(e.target.value)}
+                  placeholder="أدخل عنوان الصفحة..."
+                  className="w-full"
+                  maxLength={60}
+                  dir={dir}
+                  disabled={readOnly}
+                />
+                <div className="text-xs text-muted-foreground">
+                  {seoTitle.length}/60 حرفاً
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="seoDescription">وصف الصفحة (Meta Description)</Label>
+                <Textarea
+                  id="seoDescription"
+                  value={seoDescription}
+                  onChange={(e) => onSeoDescriptionChange && onSeoDescriptionChange(e.target.value)}
+                  placeholder="أدخل وصف الصفحة..."
+                  className="w-full"
+                  maxLength={160}
+                  dir={dir}
+                  disabled={readOnly}
+                />
+                <div className="text-xs text-muted-foreground">
+                  {seoDescription.length}/160 حرفاً
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="seoKeywords">الكلمات المفتاحية (Meta Keywords)</Label>
+                <Input
+                  id="seoKeywords"
+                  value={seoKeywords}
+                  onChange={(e) => onSeoKeywordsChange && onSeoKeywordsChange(e.target.value)}
+                  placeholder="كلمة مفتاحية 1, كلمة مفتاحية 2, ..."
+                  className="w-full"
+                  dir={dir}
+                  disabled={readOnly}
+                />
+                <div className="text-xs text-muted-foreground">
+                  افصل بين الكلمات المفتاحية بفواصل
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="focusKeyword">الكلمة المفتاحية الرئيسية</Label>
+                <Input
+                  id="focusKeyword"
+                  value={focusKeyword}
+                  onChange={(e) => onFocusKeywordChange && onFocusKeywordChange(e.target.value)}
+                  placeholder="أدخل الكلمة المفتاحية الرئيسية..."
+                  className="w-full"
+                  dir={dir}
+                  disabled={readOnly}
+                />
+                <div className="text-xs text-muted-foreground">
+                  هذه الكلمة ستستخدم لتحليل وتحسين المحتوى
+                </div>
+              </div>
+              
+              {focusKeyword && seoAnalysis.length > 0 && (
+                <div className="mt-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-medium">درجة تحسين SEO</h3>
+                    <Badge 
+                      variant={seoScore > 70 ? "success" : seoScore > 40 ? "warning" : "destructive"}
+                      className="ml-auto"
+                    >
                       {seoScore}%
                     </Badge>
-                  )}
-                </CardTitle>
-                <CardDescription>
-                  قم بتحسين عنوان الصفحة والوصف والكلمات المفتاحية
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="seoTitle">
-                    عنوان SEO 
-                    <span className="text-xs text-muted-foreground mr-1">
-                      (مثالي: 50-60 حرف)
-                    </span>
-                  </Label>
-                  <Input
-                    id="seoTitle"
-                    placeholder="أدخل عنوان SEO"
-                    value={seoTitle}
-                    onChange={(e) => onSeoTitleChange?.(e.target.value)}
-                    className="bg-white dark:bg-gray-800"
-                    maxLength={70}
-                  />
-                  {seoTitle && (
-                    <div className="text-xs flex justify-between items-center">
-                      <span className={seoTitle.length > 60 ? 'text-red-500' : (seoTitle.length < 40 ? 'text-yellow-500' : 'text-green-500')}>
-                        {seoTitle.length} / 70
-                      </span>
-                      {seoTitle.length > 60 && <span className="text-red-500">عنوان طويل جداً</span>}
-                      {seoTitle.length < 40 && seoTitle.length > 0 && <span className="text-yellow-500">عنوان قصير</span>}
-                    </div>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="seoDescription">
-                    وصف SEO 
-                    <span className="text-xs text-muted-foreground mr-1">
-                      (مثالي: 140-160 حرف)
-                    </span>
-                  </Label>
-                  <Textarea
-                    id="seoDescription"
-                    placeholder="أدخل وصف SEO"
-                    value={seoDescription}
-                    onChange={(e) => onSeoDescriptionChange?.(e.target.value)}
-                    className="resize-none bg-white dark:bg-gray-800"
-                    maxLength={170}
-                    rows={3}
-                  />
-                  {seoDescription && (
-                    <div className="text-xs flex justify-between items-center">
-                      <span className={seoDescription.length > 160 ? 'text-red-500' : (seoDescription.length < 120 ? 'text-yellow-500' : 'text-green-500')}>
-                        {seoDescription.length} / 170
-                      </span>
-                      {seoDescription.length > 160 && <span className="text-red-500">وصف طويل جداً</span>}
-                      {seoDescription.length < 120 && seoDescription.length > 0 && <span className="text-yellow-500">وصف قصير</span>}
-                    </div>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="focusKeyword">
-                    الكلمة المفتاحية الرئيسية 
-                    <span className="text-xs text-muted-foreground mr-1">
-                      (مهم جداً لتحليل SEO)
-                    </span>
-                  </Label>
-                  <Input
-                    id="focusKeyword"
-                    placeholder="أدخل الكلمة المفتاحية الرئيسية"
-                    value={focusKeyword}
-                    onChange={(e) => onFocusKeywordChange?.(e.target.value)}
-                    className="bg-white dark:bg-gray-800"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="seoKeywords">
-                    الكلمات المفتاحية
-                    <span className="text-xs text-muted-foreground mr-1">
-                      (مفصولة بفواصل)
-                    </span>
-                  </Label>
-                  <Textarea
-                    id="seoKeywords"
-                    placeholder="مثال: منح دراسية, منح خارجية, الدراسة في الخارج"
-                    value={seoKeywords}
-                    onChange={(e) => onSeoKeywordsChange?.(e.target.value)}
-                    className="resize-none bg-white dark:bg-gray-800"
-                    rows={2}
-                  />
-                </div>
-                
-                {focusKeyword && content && (
-                  <div className="mt-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="text-sm font-medium">تحليل SEO</h4>
-                      <div className="flex items-center">
-                        <span className="text-sm font-medium ml-2">النتيجة:</span>
-                        <span className={`text-sm font-bold ${seoScore >= 70 ? 'text-green-600' : seoScore >= 40 ? 'text-amber-500' : 'text-red-500'}`}>
-                          {seoScore}%
-                        </span>
+                  </div>
+                  
+                  <Progress value={seoScore} className="h-2 mb-4" />
+                  
+                  <div className="space-y-3">
+                    {seoAnalysis.map((item, index) => (
+                      <div key={index} className="flex items-start gap-2 text-sm">
+                        {item.status === 'good' ? (
+                          <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                        ) : item.status === 'warning' ? (
+                          <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
+                        ) : (
+                          <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                        )}
+                        <span>{item.text}</span>
                       </div>
-                    </div>
-                    <Progress 
-                      value={seoScore} 
-                      className="h-2 bg-gray-200" 
-                    />
-                    
-                    <div className="mt-4 space-y-3">
-                      {seoAnalysis.map((analysis, index) => (
-                        <div key={index} className="flex items-start gap-2">
-                          {analysis.status === 'good' && (
-                            <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                          )}
-                          {analysis.status === 'warning' && (
-                            <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                          )}
-                          {analysis.status === 'bad' && (
-                            <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
-                          )}
-                          <span className="text-sm">{analysis.text}</span>
-                        </div>
-                      ))}
-                    </div>
+                    ))}
                   </div>
-                )}
-                
-                {!focusKeyword && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-md p-3 flex items-start gap-2">
-                    <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-amber-800 text-sm">
-                      قم بإدخال الكلمة المفتاحية الرئيسية للحصول على تحليل SEO
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-            
-            <Card className="border shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">معاينة نتائج البحث</CardTitle>
-                <CardDescription>
-                  كيف ستظهر صفحتك في محركات البحث
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-white p-4 border rounded-md">
-                  <h3 className="text-blue-600 text-base font-medium hover:underline truncate">
-                    {seoTitle || 'عنوان الصفحة سيظهر هنا'}
-                  </h3>
-                  <div className="text-gray-800 text-xs">
-                    {window.location.host}/{seoTitle ? (seoTitle.toLowerCase().replace(/\s+/g, '-')) : 'slug-will-appear-here'}
-                  </div>
-                  <p className="text-gray-600 text-sm mt-1 line-clamp-2">
-                    {seoDescription || 'وصف الصفحة سيظهر هنا. قم بإضافة وصف يلخص محتوى الصفحة بشكل دقيق وجذاب للمستخدم.'}
-                  </p>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
         
         <TabsContent value="analytics" className="mt-0">
-          <div className="space-y-4">
-            <Card className="border shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center justify-between">
-                  <span>إحصائيات المحتوى</span>
-                </CardTitle>
-                <CardDescription>
-                  معلومات تفصيلية حول محتوى النص
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <div className="bg-gray-50 p-3 rounded-md text-center">
-                    <span className="text-gray-500 text-xs">عدد الكلمات</span>
-                    <h4 className="text-xl font-bold text-gray-800">{wordCount}</h4>
-                  </div>
-                  
-                  <div className="bg-gray-50 p-3 rounded-md text-center">
-                    <span className="text-gray-500 text-xs">وقت القراءة</span>
-                    <h4 className="text-xl font-bold text-gray-800">{Math.ceil(wordCount / 200)} دقائق</h4>
-                  </div>
-                  
-                  <div className="bg-gray-50 p-3 rounded-md text-center">
-                    <span className="text-gray-500 text-xs">درجة القراءة</span>
-                    <h4 className="text-xl font-bold text-gray-800">{readability}%</h4>
-                  </div>
-                  
-                  <div className="bg-gray-50 p-3 rounded-md text-center">
-                    <span className="text-gray-500 text-xs">درجة SEO</span>
-                    <h4 className="text-xl font-bold text-gray-800">{seoScore}%</h4>
-                  </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">تحليل المحتوى</CardTitle>
+              <CardDescription>معلومات وإحصائيات حول المحتوى</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border">
+                  <div className="text-sm text-muted-foreground mb-1">عدد الكلمات</div>
+                  <div className="text-2xl font-bold">{wordCount}</div>
                 </div>
                 
+                <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg border">
+                  <div className="text-sm text-muted-foreground mb-1">وقت القراءة التقريبي</div>
+                  <div className="text-2xl font-bold">{Math.ceil(wordCount / 200)} دقائق</div>
+                </div>
+                
+                <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border">
+                  <div className="text-sm text-muted-foreground mb-1">قابلية القراءة</div>
+                  <div className="text-2xl font-bold">{readability}%</div>
+                </div>
+              </div>
+              
+              {focusKeyword && readabilityAnalysis.length > 0 && (
                 <div className="mt-4">
-                  <h4 className="text-sm font-medium mb-3">جودة المحتوى</h4>
-                  <div className="bg-gray-50 p-4 rounded-md">
-                    <div className="mb-4">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm">قابلية القراءة</span>
-                        <span className={`text-sm font-medium ${readability >= 70 ? 'text-green-600' : readability >= 40 ? 'text-amber-500' : 'text-red-500'}`}>
-                          {readability}%
-                        </span>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-medium">تحليل قابلية القراءة</h3>
+                    <Badge 
+                      variant={readability > 70 ? "success" : readability > 40 ? "warning" : "destructive"}
+                      className="ml-auto"
+                    >
+                      {readability}%
+                    </Badge>
+                  </div>
+                  
+                  <Progress value={readability} className="h-2 mb-4" />
+                  
+                  <div className="space-y-3">
+                    {readabilityAnalysis.map((item, index) => (
+                      <div key={index} className="flex items-start gap-2 text-sm">
+                        {item.status === 'good' ? (
+                          <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                        ) : item.status === 'warning' ? (
+                          <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
+                        ) : (
+                          <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                        )}
+                        <span>{item.text}</span>
                       </div>
-                      <Progress 
-                        value={readability} 
-                        className="h-1.5 bg-gray-200" 
-                      />
-                    </div>
-                    
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm">تحسين محركات البحث</span>
-                        <span className={`text-sm font-medium ${seoScore >= 70 ? 'text-green-600' : seoScore >= 40 ? 'text-amber-500' : 'text-red-500'}`}>
-                          {seoScore}%
-                        </span>
-                      </div>
-                      <Progress 
-                        value={seoScore} 
-                        className="h-1.5 bg-gray-200" 
-                      />
-                    </div>
+                    ))}
                   </div>
                 </div>
-                
-                {/* تحليل قابلية القراءة */}
-                {wordCount > 0 && (
-                  <div className="mt-4">
-                    <h4 className="text-sm font-medium mb-2">تحليل قابلية القراءة</h4>
-                    <div className="space-y-3">
-                      {readabilityAnalysis.map((analysis, index) => (
-                        <div key={index} className="flex items-start gap-2">
-                          {analysis.status === 'good' && (
-                            <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                          )}
-                          {analysis.status === 'warning' && (
-                            <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                          )}
-                          {analysis.status === 'bad' && (
-                            <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
-                          )}
-                          <span className="text-sm">{analysis.text}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                {wordCount === 0 && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mt-4 flex items-start gap-2">
-                    <AlertCircle className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-blue-800 text-sm">
-                      قم بإضافة محتوى في المحرر للحصول على التحليل
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
         
         <TabsContent value="settings" className="mt-0">
-          <Card className="border shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">إعدادات المحرر</CardTitle>
-              <CardDescription>
-                تخصيص خيارات المحرر والظهور
-              </CardDescription>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">إعدادات المحرر</CardTitle>
+              <CardDescription>تخصيص إعدادات المحرر</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="bg-blue-50 border border-blue-200 rounded-md p-3 flex items-start gap-2">
-                  <Image className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="text-blue-800 text-sm font-medium mb-1">إضافة الصور</h4>
-                    <p className="text-blue-700 text-xs">
-                      يمكنك رفع الصور مباشرة عن طريق زر "إدراج صورة" في المحرر. تأكد من إضافة نص بديل للصور لتحسين السيو.
-                    </p>
-                  </div>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="editorDir">اتجاه النص</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={dir === 'rtl' ? "default" : "outline"}
+                    onClick={() => changeDirection('rtl')}
+                    className="flex-1"
+                    disabled={readOnly}
+                  >
+                    من اليمين إلى اليسار (RTL)
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={dir === 'ltr' ? "default" : "outline"}
+                    onClick={() => changeDirection('ltr')}
+                    className="flex-1"
+                    disabled={readOnly}
+                  >
+                    من اليسار إلى اليمين (LTR)
+                  </Button>
                 </div>
-                
-                <div className="bg-green-50 border border-green-200 rounded-md p-3 flex items-start gap-2">
-                  <BarChart2 className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="text-green-800 text-sm font-medium mb-1">تحليل SEO مباشر</h4>
-                    <p className="text-green-700 text-xs">
-                      المحرر يقوم بتحليل المحتوى تلقائياً لتحسين الظهور في محركات البحث. استخدم الكلمة المفتاحية في العنوان والمقدمة والعناوين الفرعية.
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="bg-purple-50 border border-purple-200 rounded-md p-3 flex items-start gap-2">
-                  <Settings className="h-5 w-5 text-purple-500 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="text-purple-800 text-sm font-medium mb-1">أدوات متقدمة</h4>
-                    <p className="text-purple-700 text-xs">
-                      استخدم أدوات المحرر المتقدمة مثل إضافة الجداول والقوائم والاقتباسات لإثراء المحتوى وجعله أكثر جاذبية وتنظيماً.
-                    </p>
-                  </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>إرشادات لتحسين محركات البحث</Label>
+                <div className="text-sm text-muted-foreground">
+                  <p>للحصول على أفضل نتائج في محركات البحث:</p>
+                  <ul className="list-disc list-inside mt-2 space-y-1">
+                    <li>استخدم العناوين الفرعية (H2, H3) لتقسيم المحتوى</li>
+                    <li>استخدم الكلمة المفتاحية الرئيسية في العنوان والفقرة الأولى</li>
+                    <li>أضف نصوص بديلة للصور (Alt Text)</li>
+                    <li>اكتب محتوى لا يقل عن 500 كلمة للمقالات الأساسية</li>
+                    <li>استخدم روابط داخلية وخارجية ذات صلة</li>
+                    <li>ابدأ بالمعلومات الأكثر أهمية في بداية المقال</li>
+                    <li>اكتب جملاً قصيرة وفقرات قصيرة لتحسين القراءة</li>
+                    <li>استخدم كلمات مفتاحية طويلة (Long-tail keywords)</li>
+                  </ul>
                 </div>
               </div>
             </CardContent>
