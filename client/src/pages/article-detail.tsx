@@ -34,6 +34,12 @@ const ArticleDetail = () => {
     queryKey: ['/api/users'],
   });
 
+  // استعلام عن تصنيفات المقال
+  const { data: postTags = [] } = useQuery<any[]>({
+    queryKey: [`/api/posts/${post?.id}/tags`],
+    enabled: !!post,
+  });
+
   const { data: relatedPosts } = useQuery<Post[]>({
     queryKey: ['/api/posts', { limit: 3 }],
     enabled: !!post,

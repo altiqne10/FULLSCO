@@ -315,12 +315,18 @@ export default function CreatePostPage() {
       finalData.content = postData.content;
     }
     
-    console.log("تقديم البيانات النهائية:", finalData);
+    // إضافة التصنيفات بالتنسيق المطلوب للواجهة الخلفية
+    const dataToSubmit = {
+      ...finalData,
+      tags: finalData.selectedTags, // إرسال التصنيفات للخادم بالاسم المتوقع (tags)
+    };
+    
+    console.log("تقديم البيانات النهائية:", dataToSubmit);
     
     if (isEditMode) {
-      updatePostMutation.mutate(finalData);
+      updatePostMutation.mutate(dataToSubmit);
     } else {
-      addPostMutation.mutate(finalData);
+      addPostMutation.mutate(dataToSubmit);
     }
   };
   
