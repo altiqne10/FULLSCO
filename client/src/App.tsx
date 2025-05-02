@@ -117,10 +117,14 @@ function App() {
                     {/* Original Admin Routes */}
                     <Route path="/admin" component={AdminDashboard} />
                     <Route path="/admin/scholarships" component={AdminScholarships} />
+                    <Route path="/admin/scholarships/create" component={CreateScholarship} />
+                    <Route path="/admin/scholarships/edit/:id" component={CreateScholarship} />
                     <Route path="/admin/categories" component={AdminCategories} />
                     <Route path="/admin/levels" component={AdminLevels} />
                     <Route path="/admin/countries" component={AdminCountries} />
                     <Route path="/admin/posts" component={AdminPosts} />
+                    <Route path="/admin/posts/create" component={CreatePost} />
+                    <Route path="/admin/posts/edit/:id" component={CreatePost} />
                     <Route path="/admin/users" component={AdminUsers} />
                     <Route path="/admin/settings" component={AdminSettings} />
                     <Route path="/admin/site-settings" component={AdminSiteSettings} />
@@ -131,8 +135,6 @@ function App() {
                     <Route path="/admin/backups" component={AdminBackups} />
                     <Route path="/admin/seo" component={AdminSEO} />
                     <Route path="/admin/analytics" component={AdminAnalytics} />
-                    <Route path="/admin/scholarships/create" component={CreateScholarship} />
-                    <Route path="/admin/posts/create" component={CreatePost} />
 
                     {/* New Admin Routes */}
                     <Route path="/admin/subscribers" component={AdminSubscribers} />
