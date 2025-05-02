@@ -25,6 +25,7 @@ const Header = () => {
   const isMobile = useIsMobile();
   const { settings, isLoading: settingsLoading } = useSiteSettings();
   const { data: headerPages, isLoading: pagesLoading } = usePages({ showInHeader: true });
+  const { data: menuStructure, isError: menuError } = useMenuStructure("header");
 
   useEffect(() => {
     const handleScroll = () => {
@@ -87,7 +88,7 @@ const Header = () => {
               />
               
               {/* الاحتياطي في حال لم يتم تحميل القائمة الديناميكية */}
-              {(!useMenuStructure("header").data || useMenuStructure("header").isError) && (
+              {(!menuStructure || menuError) && (
                 <>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

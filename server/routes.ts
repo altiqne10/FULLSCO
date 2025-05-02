@@ -1137,6 +1137,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET أساسي للهيكل لاسترجاع جميع القوائم
+  app.get("/api/menu-structure", async (req, res) => {
+    try {
+      const locations = ["header", "footer", "sidebar", "mobile"];
+      const structures = {};
+      
+      for (const loc of locations) {
+        try {
+          const structure = await storage.getMenuStructure(loc);
+          if (structure) {
+            structures[loc] = structure;
+          }
+        } catch (innerError) {
+          console.error(`Error fetching menu structure for ${loc}:`, innerError);
+          // استمر في المحاولة مع المواقع الأخرى
+        }
+      }
+      
+      res.json(structures);
+    } catch (error) {
+      console.error("Error fetching all menu structures:", error);
+      res.status(500).json({ message: "Failed to fetch menu structures", error: (error as Error).message });
+    }
+  });
+
+  // GET محدد للهيكل بناءً على الموقع
   app.get("/api/menu-structure/:location", async (req, res) => {
     try {
       const location = req.params.location;

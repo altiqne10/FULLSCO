@@ -41,7 +41,7 @@ export const DynamicMenu = ({
     return <div className={className}>جاري التحميل...</div>;
   }
   
-  if (error || !menuStructure) {
+  if (error || !menuStructure || !menuStructure.items) {
     return <div className={className}>تعذر تحميل القائمة</div>;
   }
 

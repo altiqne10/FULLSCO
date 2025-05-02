@@ -8,6 +8,8 @@ import { useMenuStructure } from "@/hooks/use-menu";
 const Footer = () => {
   const { settings } = useSiteSettings();
   const { data: footerPages, isLoading: pagesLoading } = usePages({ showInFooter: true });
+  const { data: footerMenuStructure, isError: footerMenuError } = useMenuStructure("footer");
+  const { data: sidebarMenuStructure, isError: sidebarMenuError } = useMenuStructure("sidebar");
   
   return (
     <footer className="bg-gray-900 text-white pt-12 pb-6">
@@ -73,7 +75,7 @@ const Footer = () => {
             />
             
             {/* عرض القائمة الاحتياطية إذا لم تكن القائمة الديناميكية متاحة */}
-            {(!useMenuStructure("footer").data || useMenuStructure("footer").isError) && (
+            {(!footerMenuStructure || footerMenuError) && (
               <ul className="space-y-2">
                 <li>
                   <Link href="/">
@@ -122,7 +124,7 @@ const Footer = () => {
             />
             
             {/* عرض القائمة الاحتياطية إذا لم تكن القائمة الديناميكية متاحة */}
-            {(!useMenuStructure("sidebar").data || useMenuStructure("sidebar").isError) && (
+            {(!sidebarMenuStructure || sidebarMenuError) && (
               <ul className="space-y-2">
                 <li>
                   <Link href="/scholarships?level=bachelor">
