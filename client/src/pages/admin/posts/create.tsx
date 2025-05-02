@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -107,6 +107,9 @@ export default function CreatePostPage() {
   const [newTagName, setNewTagName] = useState('');
   const [showAddTagDialog, setShowAddTagDialog] = useState(false);
   const isMobile = useIsMobile();
+  
+  // مرجع لتخزين محتوى المقال
+  const editorContentRef = useRef<string>('');
   
   // تعريف نوع البيانات للمقال
   type PostData = {
@@ -298,10 +301,25 @@ export default function CreatePostPage() {
   // معالجة تقديم النموذج
   const onSubmit = (data: PostFormValues) => {
     setIsSubmitting(true);
+    
+    // استخدام المحتوى من المرجع إذا كان متوفرًا
+    let finalData = { ...data };
+    
+    // إذا كان هناك محتوى مخزن في المرجع فنستخدمه
+    if (editorContentRef.current) {
+      console.log("استخدام المحتوى من المرجع:", editorContentRef.current);
+      finalData.content = editorContentRef.current;
+    } else if (postData?.content && (!finalData.content || finalData.content.trim() === '')) {
+      console.log("استخدام المحتوى من بيانات المقال:", postData.content);
+      finalData.content = postData.content;
+    }
+    
+    console.log("تقديم البيانات النهائية:", finalData);
+    
     if (isEditMode) {
-      updatePostMutation.mutate(data);
+      updatePostMutation.mutate(finalData);
     } else {
-      addPostMutation.mutate(data);
+      addPostMutation.mutate(finalData);
     }
   };
   
@@ -567,9 +585,12 @@ export default function CreatePostPage() {
                           <FormLabel>محتوى المقال</FormLabel>
                           <FormControl>
                             <RichEditor
-                              initialValue={field.value || (postData?.content || '')}
+                              initialValue={postData?.content || field.value || ''}
                               onChange={(html) => {
                                 console.log("تغيير المحتوى:", html);
+                                // حفظ المحتوى في المرجع
+                                editorContentRef.current = html;
+                                // تحديث قيمة النموذج
                                 field.onChange(html);
                               }}
                               placeholder="اكتب محتوى المقال..."
