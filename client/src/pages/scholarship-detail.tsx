@@ -216,7 +216,11 @@ const ScholarshipDetail = () => {
                   
                   {scholarship.content && (
                     <div className="scholarship-content mb-6">
-                      <div className="text-gray-800 leading-relaxed" dangerouslySetInnerHTML={{ __html: scholarship.content }}></div>
+                      <div 
+                        className="prose max-w-none text-gray-800 leading-relaxed rtl:text-right" 
+                        dangerouslySetInnerHTML={{ __html: scholarship.content }}
+                        dir="rtl"
+                      ></div>
                     </div>
                   )}
                   
