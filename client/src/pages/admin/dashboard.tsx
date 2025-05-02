@@ -267,7 +267,7 @@ const AdminDashboard = () => {
         <CardContent className="p-6">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-2xl font-bold">مرحباً، {user?.fullName || user?.username || 'المدير'}</h2>
+              <h2 className="text-2xl font-bold">مرحباً، {typeof user === 'object' && user ? (user.fullName || user.username || 'المدير') : 'المدير'}</h2>
               <p className="text-muted-foreground mt-1 max-w-lg">هذه هي لوحة تحكم FULLSCO - خلال {timeRange === 'day' ? 'اليوم' : timeRange === 'week' ? 'هذا الأسبوع' : timeRange === 'month' ? 'هذا الشهر' : 'هذا العام'} استقبل الموقع <strong>1,240</strong> زائر جديد و <strong>62</strong> اشتراك في النشرة البريدية.</p>
             </div>
             <div className="hidden md:block">
