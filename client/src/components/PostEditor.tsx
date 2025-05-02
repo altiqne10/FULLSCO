@@ -199,7 +199,9 @@ export default function PostEditor({
                             editor.on('change', function() {
                               field.onChange(editor.getContent());
                             });
-                          }
+                          },
+                          // Add this to disable the domain validation if using a local dev instance
+                          readonly: false
                         }}
                       />
                     </div>
