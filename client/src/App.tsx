@@ -21,7 +21,7 @@ import AdminLevels from "@/pages/admin/levels";
 import AdminCountries from "@/pages/admin/countries";
 import AdminSiteSettings from "@/pages/admin/site-settings"; // نستخدم واجهة واحدة فقط لإعدادات الموقع
 import AdminPages from "@/pages/admin/pages";
-import AdminMenus from "@/pages/admin/menus";
+import AdminMenus from "@/pages/admin/menus-new";
 import AdminMedia from "@/pages/admin/media";
 import AdminRoles from "@/pages/admin/roles";
 import AdminBackups from "@/pages/admin/backups";
