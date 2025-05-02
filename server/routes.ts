@@ -147,9 +147,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const users = await storage.listUsers();
     // Remove passwords from response
     const safeUsers = users.map(user => {
-      const userCopy = { ...user };
-      delete userCopy.password;
-      return userCopy;
+      const { password, ...userWithoutPassword } = user;
+      return userWithoutPassword;
     });
     res.json(safeUsers);
   });

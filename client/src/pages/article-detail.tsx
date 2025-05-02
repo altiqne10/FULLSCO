@@ -107,39 +107,50 @@ const ArticleDetail = () => {
   }
 
   return (
-    <main className="bg-gray-50 py-12">
+    <main className="bg-gray-50 py-12" dir="rtl">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
         <div className="mb-6">
           <Link href="/articles">
             <Button variant="outline" className="mb-4">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Articles
+              <ArrowLeft className="ml-2 h-4 w-4" /> العودة للمقالات
             </Button>
           </Link>
           
-          <Badge variant="secondary" className="mb-4">Guide</Badge>
+          {/* Tags */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {postTags.length > 0 ? (
+              postTags.map((tag) => (
+                <Badge key={tag.id} variant="secondary" className="mb-1">
+                  {tag.name}
+                </Badge>
+              ))
+            ) : (
+              <Badge variant="secondary" className="mb-1">مقالات عامة</Badge>
+            )}
+          </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-4">{post.title}</h1>
           
           <div className="flex flex-wrap items-center text-sm text-gray-600 mb-8">
-            <div className="flex items-center mr-4 mb-2">
-              <Calendar className="h-4 w-4 mr-1" /> {formatDate(post.createdAt)}
+            <div className="flex items-center ml-4 mb-2">
+              <Calendar className="h-4 w-4 ml-1" /> {formatDate(post.createdAt)}
             </div>
-            <div className="flex items-center mr-4 mb-2">
-              <Clock className="h-4 w-4 mr-1" /> {getReadingTime(post.content)} min read
+            <div className="flex items-center ml-4 mb-2">
+              <Clock className="h-4 w-4 ml-1" /> {getReadingTime(post.content)} دقيقة للقراءة
             </div>
             <div className="flex items-center mb-2">
-              <Eye className="h-4 w-4 mr-1" /> {post.views || 0} views
+              <Eye className="h-4 w-4 ml-1" /> {post.views || 0} مشاهدة
             </div>
           </div>
           
           {/* Author */}
           <div className="flex items-center mb-8">
-            <Avatar className="h-10 w-10 mr-3">
+            <Avatar className="h-10 w-10 ml-3">
               <AvatarImage src="https://randomuser.me/api/portraits/men/1.jpg" alt={getAuthorName(post.authorId)} />
               <AvatarFallback>{getInitials(getAuthorName(post.authorId))}</AvatarFallback>
             </Avatar>
             <div>
               <div className="font-medium">{getAuthorName(post.authorId)}</div>
-              <div className="text-sm text-gray-500">Scholarship Expert</div>
+              <div className="text-sm text-gray-500">خبير المنح الدراسية</div>
             </div>
           </div>
         </div>
@@ -163,12 +174,12 @@ const ArticleDetail = () => {
             {/* Share and save buttons */}
             <div className="flex flex-wrap gap-4 mt-8 pt-6 border-t border-gray-200">
               <Button variant="outline" size="sm" className="flex items-center">
-                <Share2 className="h-4 w-4 mr-2" /> Share
+                <Share2 className="h-4 w-4 ml-2" /> مشاركة
               </Button>
               <Button variant="outline" size="sm" className="flex items-center">
-                <Bookmark className="h-4 w-4 mr-2" /> Save
+                <Bookmark className="h-4 w-4 ml-2" /> حفظ
               </Button>
-              <div className="flex items-center ml-auto space-x-2">
+              <div className="flex items-center mr-auto gap-2">
                 <Button variant="outline" size="icon" className="rounded-full h-8 w-8 p-0">
                   <Facebook className="h-4 w-4" />
                 </Button>
@@ -186,7 +197,7 @@ const ArticleDetail = () => {
         {/* Related articles */}
         {relatedPosts && relatedPosts.length > 0 && (
           <div className="mb-12">
-            <h2 className="text-2xl font-bold mb-6">Related Articles</h2>
+            <h2 className="text-2xl font-bold mb-6">مقالات ذات صلة</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {relatedPosts
                 .filter(p => p.id !== post.id)
@@ -205,9 +216,9 @@ const ArticleDetail = () => {
                         </Link>
                       </h3>
                       <div className="flex items-center text-sm text-gray-600">
-                        <Calendar className="h-3 w-3 mr-1" /> {formatDate(relatedPost.createdAt)}
+                        <Calendar className="h-3 w-3 ml-1" /> {formatDate(relatedPost.createdAt)}
                         <span className="mx-2">•</span>
-                        <UserCircle className="h-3 w-3 mr-1" /> {getAuthorName(relatedPost.authorId)}
+                        <UserCircle className="h-3 w-3 ml-1" /> {getAuthorName(relatedPost.authorId)}
                       </div>
                     </CardContent>
                   </Card>
