@@ -268,354 +268,257 @@ const AdminDashboard = () => {
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-2xl font-bold">مرحباً، {typeof user === 'object' && user ? (user.fullName || user.username || 'المدير') : 'المدير'}</h2>
-              <p className="text-muted-foreground mt-1 max-w-lg">هذه هي لوحة تحكم FULLSCO - خلال {timeRange === 'day' ? 'اليوم' : timeRange === 'week' ? 'هذا الأسبوع' : timeRange === 'month' ? 'هذا الشهر' : 'هذا العام'} استقبل الموقع <strong>1,240</strong> زائر جديد و <strong>62</strong> اشتراك في النشرة البريدية.</p>
+              <p className="text-muted-foreground mt-1 max-w-lg">هذه هي لوحة تحكم FULLSCO - استقبل الموقع <strong>1,240</strong> زائر جديد و <strong>62</strong> اشتراك في النشرة البريدية.</p>
             </div>
             <div className="hidden md:block">
-              <Sparkles className="h-10 w-10 text-primary" />
+              <BarChart2 className="h-10 w-10 text-primary" />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Tabs */}
-      <Tabs defaultValue="overview" className="mb-6" onValueChange={setActiveTab}>
-        <TabsList className="w-full grid grid-cols-3 md:w-auto md:inline-flex">
-          <TabsTrigger value="overview">نظرة عامة</TabsTrigger>
-          <TabsTrigger value="analytics">التحليلات</TabsTrigger>
-          <TabsTrigger value="tasks">المهام والتنبيهات</TabsTrigger>
-        </TabsList>
-      </Tabs>
-
-      {/* Tab Content: Overview */}
-      <TabsContent value="overview" className="space-y-6 mt-2">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {stats.map((stat, index) => (
-            <Card key={index} className="shadow-sm border-muted">
-              <CardContent className="p-4 md:p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <div className={`p-3 rounded-full ${stat.color}`}>
-                    <stat.icon className="h-5 w-5" />
-                  </div>
-                  <Badge variant={stat.trending === "up" ? "success" : "destructive"} className="text-xs">
-                    {stat.trending === "up" ? <ArrowUp className="ml-1 h-3 w-3" /> : <ArrowDown className="ml-1 h-3 w-3" />}
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
+        {stats.map((stat, index) => (
+          <Card key={index} className="shadow-sm border-muted">
+            <CardContent className="p-4 md:p-6">
+              <div className="flex items-center justify-between mb-3">
+                <div className={`p-3 rounded-full ${stat.color}`}>
+                  <stat.icon className="h-5 w-5" />
+                </div>
+                <div className="text-xs bg-secondary/20 px-2 py-1 rounded-full flex items-center">
+                  {stat.trending === "up" ? <ArrowUp className="ml-1 h-3 w-3 text-green-500" /> : <ArrowDown className="ml-1 h-3 w-3 text-red-500" />}
+                  <span className={stat.trending === "up" ? "text-green-600" : "text-red-600"}>
                     {Math.abs(stat.change)}%
-                  </Badge>
+                  </span>
                 </div>
-                <div>
-                  <h3 className="text-2xl md:text-3xl font-bold">
-                    {stat.isLoading ? (
-                      <div className="h-8 bg-muted/50 rounded animate-pulse w-16"></div>
-                    ) : (
-                      formatNumber(stat.value)
-                    )}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">{stat.title}</p>
-                </div>
-                <div className="mt-3">
-                  <Link href={stat.link}>
-                    <Button variant="ghost" size="sm" className="px-0 text-muted-foreground hover:text-primary w-full justify-start">
-                      عرض التفاصيل <ChevronLeft className="ml-1 h-4 w-4" />
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Recent Activity Card */}
-          <Card className="shadow-sm lg:col-span-2">
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-lg font-bold">آخر النشاطات</CardTitle>
-                <Button variant="ghost" size="sm" className="text-xs">عرض الكل</Button>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentActivity.map((activity, index) => (
-                  <div key={index} className="flex p-3 rounded-lg hover:bg-muted/30 dark:hover:bg-muted/10 transition-colors border border-border/50">
-                    <div className={`w-10 h-10 rounded-full ${activity.color} flex items-center justify-center ml-3 shrink-0`}>
-                      <activity.icon className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-medium">
-                            <span>
-                              {activity.type === 'add' && 'إضافة'}
-                              {activity.type === 'edit' && 'تحديث'}
-                              {activity.type === 'view' && 'مشاهدة'}
-                            </span>
-                            {' '}
-                            {activity.entity}: <span>{activity.title}</span>
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">بواسطة {activity.user}</p>
-                        </div>
-                        <Badge variant="outline" className="text-xs h-6">
-                          <Clock className="h-3 w-3 ml-1" />
-                          {activity.time}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div>
+                <h3 className="text-2xl md:text-3xl font-bold">
+                  {stat.isLoading ? (
+                    <div className="h-8 bg-muted/50 rounded animate-pulse w-16"></div>
+                  ) : (
+                    formatNumber(stat.value)
+                  )}
+                </h3>
+                <p className="text-sm text-muted-foreground">{stat.title}</p>
               </div>
-              <div className="mt-4 text-center">
-                <Button variant="outline" size="sm">
-                  عرض المزيد من النشاطات
-                </Button>
+              <div className="mt-3">
+                <Link href={stat.link}>
+                  <Button variant="ghost" size="sm" className="px-0 text-muted-foreground hover:text-primary w-full justify-start">
+                    عرض التفاصيل <ChevronLeft className="ml-1 h-4 w-4" />
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>
+        ))}
+      </div>
 
-          {/* Right Column */}
-          <div className="space-y-6">
-            {/* Targets Card */}
-            <Card className="shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-bold">أهداف {timeRange === 'day' ? 'اليوم' : timeRange === 'week' ? 'الأسبوع' : timeRange === 'month' ? 'الشهر' : 'العام'}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {targets.map((target, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">{target.title}</span>
-                        <span className="text-sm text-muted-foreground">{target.current}/{target.target}</span>
-                      </div>
-                      <Progress value={(target.current / target.target) * 100} className={target.color} />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button variant="outline" size="sm" className="w-full">
-                  <TrendingUp className="ml-2 h-4 w-4" />
-                  إدارة الأهداف
-                </Button>
-              </CardFooter>
-            </Card>
-
-            {/* Quick Actions Card */}
-            <Card className="shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-bold">إجراءات سريعة</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <Link href="/admin/scholarships/create">
-                    <Button className="w-full justify-between" variant="default">
-                      <div className="flex items-center">
-                        <PlusCircle className="ml-2 h-4 w-4" /> إضافة منحة جديدة
-                      </div>
-                      <ChevronLeft className="h-4 w-4 opacity-70" />
-                    </Button>
-                  </Link>
-                  <Link href="/admin/posts/create">
-                    <Button className="w-full justify-between" variant="secondary">
-                      <div className="flex items-center">
-                        <FileText className="ml-2 h-4 w-4" /> إنشاء مقال جديد
-                      </div>
-                      <ChevronLeft className="h-4 w-4 opacity-70" />
-                    </Button>
-                  </Link>
-                  <Link href="/admin/analytics">
-                    <Button className="w-full justify-between" variant="outline">
-                      <div className="flex items-center">
-                        <Activity className="ml-2 h-4 w-4" /> عرض التحليلات
-                      </div>
-                      <ChevronLeft className="h-4 w-4 opacity-70" />
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Popular Content */}
-        <Card className="shadow-sm">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        {/* Recent Activity Card */}
+        <Card className="shadow-sm lg:col-span-2">
           <CardHeader className="pb-2">
             <div className="flex justify-between items-center">
-              <CardTitle className="text-lg font-bold">المحتوى الأكثر شعبية</CardTitle>
-              <Button variant="ghost" size="sm" className="text-xs">عرض التقرير الكامل</Button>
+              <CardTitle className="text-lg font-bold">آخر النشاطات</CardTitle>
+              <Button variant="ghost" size="sm" className="text-xs">عرض الكل</Button>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {popularContent.map((item, index) => (
-                <Card key={index} className="bg-muted/30 dark:bg-muted/10 border-border/50">
-                  <CardContent className="p-4">
-                    <div className="flex items-center mb-2">
-                      <div className="p-2 rounded-md bg-background mr-2">
-                        <item.icon className="h-4 w-4 text-primary" />
+            <div className="space-y-4">
+              {recentActivity.map((activity, index) => (
+                <div key={index} className="flex p-3 rounded-lg hover:bg-muted/30 transition-colors border border-border/50">
+                  <div className={`w-10 h-10 rounded-full ${activity.color} flex items-center justify-center ml-3 shrink-0`}>
+                    <activity.icon className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium">
+                          <span>
+                            {activity.type === 'add' && 'إضافة'}
+                            {activity.type === 'edit' && 'تحديث'}
+                            {activity.type === 'view' && 'مشاهدة'}
+                          </span>
+                          {' '}
+                          {activity.entity}: <span>{activity.title}</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">بواسطة {activity.user}</p>
                       </div>
-                      <Badge variant="outline" className="text-xs">{item.type}</Badge>
-                    </div>
-                    <h3 className="font-medium line-clamp-1">{item.title}</h3>
-                    <div className="flex justify-between items-center mt-2">
-                      <div className="flex items-center">
-                        <Eye className="h-3.5 w-3.5 text-muted-foreground ml-1" />
-                        <span className="text-sm text-muted-foreground">{item.views}</span>
+                      <div className="text-xs border px-2 py-0.5 rounded-full h-6 flex items-center text-muted-foreground">
+                        <Clock className="h-3 w-3 ml-1" />
+                        {activity.time}
                       </div>
-                      <Badge variant={item.trending === "up" ? "success" : "destructive"} className="text-xs">
-                        {item.trending === "up" ? <ArrowUp className="ml-1 h-3 w-3" /> : <ArrowDown className="ml-1 h-3 w-3" />}
-                        {Math.abs(item.growth)}%
-                      </Badge>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
-
-      {/* Tab Content: Analytics */}
-      <TabsContent value="analytics" className="space-y-6 mt-2">
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg font-bold">تحليلات الزوار</CardTitle>
-            <CardDescription>عرض بياني للزيارات خلال {timeRange === 'day' ? 'اليوم' : timeRange === 'week' ? 'هذا الأسبوع' : timeRange === 'month' ? 'هذا الشهر' : 'هذا العام'}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80 flex items-center justify-center bg-muted/30 dark:bg-muted/10 rounded-md border border-dashed border-muted">
-              <div className="text-center">
-                <BarChart2 className="h-10 w-10 md:h-12 md:w-12 mx-auto text-muted-foreground mb-3" />
-                <p className="text-muted-foreground">سيتم عرض بيانات التحليلات هنا</p>
-                <Button variant="outline" className="mt-4">تحميل التحليلات</Button>
-              </div>
+            <div className="mt-4 text-center">
+              <Button variant="outline" size="sm">
+                عرض المزيد من النشاطات
+              </Button>
             </div>
           </CardContent>
         </Card>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        {/* Right Column */}
+        <div className="space-y-6">
+          {/* Targets Card */}
           <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-lg font-bold">مصادر الزيارات</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-bold">أهداف {timeRange === 'day' ? 'اليوم' : timeRange === 'week' ? 'الأسبوع' : timeRange === 'month' ? 'الشهر' : 'العام'}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-60 flex items-center justify-center bg-muted/30 dark:bg-muted/10 rounded-md border border-dashed border-muted">
-                <div className="text-center">
-                  <Globe className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-muted-foreground">سيتم عرض مصادر الزيارات هنا</p>
-                </div>
+              <div className="space-y-4">
+                {targets.map((target, index) => (
+                  <div key={index} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">{target.title}</span>
+                      <span className="text-sm text-muted-foreground">{target.current}/{target.target}</span>
+                    </div>
+                    <div className="h-2 bg-secondary/50 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${target.color}`}
+                        style={{ width: `${(target.current / target.target) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
+            <CardFooter className="border-t pt-4">
+              <Button variant="outline" size="sm" className="w-full">
+                <TrendingUp className="ml-2 h-4 w-4" />
+                إدارة الأهداف
+              </Button>
+            </CardFooter>
           </Card>
-          
+
+          {/* Quick Actions Card */}
           <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-lg font-bold">سلوك المستخدمين</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-bold">إجراءات سريعة</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-60 flex items-center justify-center bg-muted/30 dark:bg-muted/10 rounded-md border border-dashed border-muted">
-                <div className="text-center">
-                  <Users className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-muted-foreground">سيتم عرض بيانات سلوك المستخدمين هنا</p>
-                </div>
+              <div className="space-y-3">
+                <Link href="/admin/scholarships/create">
+                  <Button className="w-full justify-between" variant="default">
+                    <div className="flex items-center">
+                      <PlusCircle className="ml-2 h-4 w-4" /> إضافة منحة جديدة
+                    </div>
+                    <ChevronLeft className="h-4 w-4 opacity-70" />
+                  </Button>
+                </Link>
+                <Link href="/admin/posts/create">
+                  <Button className="w-full justify-between" variant="secondary">
+                    <div className="flex items-center">
+                      <FileText className="ml-2 h-4 w-4" /> إنشاء مقال جديد
+                    </div>
+                    <ChevronLeft className="h-4 w-4 opacity-70" />
+                  </Button>
+                </Link>
+                <Link href="/admin/analytics">
+                  <Button className="w-full justify-between" variant="outline">
+                    <div className="flex items-center">
+                      <Activity className="ml-2 h-4 w-4" /> عرض التحليلات
+                    </div>
+                    <ChevronLeft className="h-4 w-4 opacity-70" />
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>
         </div>
-      </TabsContent>
+      </div>
 
-      {/* Tab Content: Tasks */}
-      <TabsContent value="tasks" className="space-y-6 mt-2">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Tasks Card */}
-          <Card className="shadow-sm">
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-lg font-bold">المهام العاجلة</CardTitle>
-                <Button variant="outline" size="sm">
-                  <PlusCircle className="ml-2 h-4 w-4" />
-                  مهمة جديدة
+      {/* Popular Content */}
+      <Card className="shadow-sm mb-6">
+        <CardHeader className="pb-2">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-lg font-bold">المحتوى الأكثر شعبية</CardTitle>
+            <Button variant="ghost" size="sm" className="text-xs">عرض التقرير الكامل</Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {popularContent.map((item, index) => (
+              <Card key={index} className="bg-muted/30 border-border/50">
+                <CardContent className="p-4">
+                  <div className="flex items-center mb-2">
+                    <div className="p-2 rounded-md bg-background mr-2">
+                      <item.icon className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="text-xs border px-2 py-0.5 rounded-full">
+                      {item.type}
+                    </div>
+                  </div>
+                  <h3 className="font-medium line-clamp-1">{item.title}</h3>
+                  <div className="flex justify-between items-center mt-2">
+                    <div className="flex items-center">
+                      <Eye className="h-3.5 w-3.5 text-muted-foreground ml-1" />
+                      <span className="text-sm text-muted-foreground">{item.views}</span>
+                    </div>
+                    <div className="text-xs px-2 py-0.5 rounded-full flex items-center">
+                      {item.trending === "up" ? 
+                        <ArrowUp className="ml-1 h-3 w-3 text-green-500" /> : 
+                        <ArrowDown className="ml-1 h-3 w-3 text-red-500" />
+                      }
+                      <span className={item.trending === "up" ? "text-green-600" : "text-red-600"}>
+                        {Math.abs(item.growth)}%
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Schedule Card */}
+      <Card className="shadow-sm mb-6">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="text-lg font-bold">المهام العاجلة</CardTitle>
+              <CardDescription>المهام المطلوب إنجازها قريباً</CardDescription>
+            </div>
+            <Button variant="outline" size="sm">
+              <PlusCircle className="ml-2 h-4 w-4" />
+              مهمة جديدة
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {todos.map((todo, index) => (
+              <div key={index} className="flex items-center space-x-2 p-3 rounded-lg border border-border/50 rtl:space-x-reverse hover:bg-muted/30">
+                <div className="mr-2">
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <ListTodo className="h-5 w-5 text-muted-foreground" />
+                  </Button>
+                </div>
+                <div className="flex-1 mr-2">
+                  <p className="font-medium">{todo.task}</p>
+                  <div className="flex items-center mt-1">
+                    <div className={`text-xs px-2 py-0.5 rounded-full ${todo.priorityColor} bg-white`}>
+                      {todo.priority}
+                    </div>
+                    <span className="text-xs text-muted-foreground mr-2">
+                      <Calendar className="inline-block ml-1 h-3.5 w-3.5" />
+                      {todo.dueDate}
+                    </span>
+                  </div>
+                </div>
+                <Button variant="ghost" size="sm" className="p-1 h-8">
+                  <CheckCircle2 className="h-5 w-5 text-muted-foreground hover:text-green-500" />
                 </Button>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {todos.map((todo, index) => (
-                  <div key={index} className="flex items-center space-x-2 p-3 rounded-lg border border-border/50 rtl:space-x-reverse hover:bg-muted/30 dark:hover:bg-muted/10">
-                    <div className="mr-2">
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <ListTodo className="h-5 w-5 text-muted-foreground" />
-                      </Button>
-                    </div>
-                    <div className="flex-1 mr-2">
-                      <p className="font-medium">{todo.task}</p>
-                      <div className="flex items-center mt-1">
-                        <Badge variant="outline" className={`text-xs ${todo.priorityColor} bg-white dark:bg-transparent mr-2`}>
-                          {todo.priority}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          <Calendar className="inline-block ml-1 h-3.5 w-3.5" />
-                          {todo.dueDate}
-                        </span>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="sm" className="p-1 h-8">
-                      <CheckCircle2 className="h-5 w-5 text-muted-foreground hover:text-green-500" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-            <CardFooter className="border-t pt-4">
-              <Button variant="outline" className="w-full">عرض جميع المهام</Button>
-            </CardFooter>
-          </Card>
-
-          {/* Alerts Card */}
-          <Card className="shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-bold">التنبيهات الأخيرة</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {alerts.map((alert, index) => (
-                  <div key={index} className={`p-4 rounded-lg ${alert.color} flex items-start`}>
-                    <div className="shrink-0 ml-3">
-                      <alert.icon className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium">{alert.title}</h4>
-                      <p className="text-sm mt-1">{alert.message}</p>
-                      <div className="flex justify-between items-center mt-2">
-                        <span className="text-xs opacity-80">{alert.time}</span>
-                        <Button variant="ghost" size="sm" className="h-6 text-xs">عرض</Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-            <CardFooter className="border-t pt-4">
-              <Button variant="outline" className="w-full">الاطلاع على سجل التنبيهات</Button>
-            </CardFooter>
-          </Card>
-        </div>
-        
-        {/* Calendar Card */}
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg font-bold">التقويم والمواعيد</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80 flex items-center justify-center bg-muted/30 dark:bg-muted/10 rounded-md border border-dashed border-muted">
-              <div className="text-center">
-                <Calendar className="h-10 w-10 md:h-12 md:w-12 mx-auto text-muted-foreground mb-3" />
-                <p className="text-muted-foreground">سيتم عرض التقويم والمواعيد المهمة هنا</p>
-                <Button variant="outline" className="mt-4">إضافة موعد جديد</Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </AdminLayout>
   );
 };
