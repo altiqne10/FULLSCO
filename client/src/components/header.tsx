@@ -14,6 +14,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 import { usePages } from "@/hooks/use-pages";
+import { DynamicMenu } from "@/components/dynamic-menu";
+import { useMenuStructure } from "@/hooks/use-menu";
 
 const Header = () => {
   const [location] = useLocation();
@@ -74,94 +76,92 @@ const Header = () => {
                 </span>
               </Link>
               
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="link-hover flex items-center px-3 py-2 text-sm font-medium text-foreground/80 transition-colors hover:text-primary">
-                    المنح الدراسية <ChevronDown className="mr-1 h-4 w-4" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="animate-slide-up w-56">
-                  <DropdownMenuItem asChild className="flex cursor-pointer items-center gap-2 py-2">
-                    <Link href="/scholarships?level=bachelor">
-                      <div className="flex w-full items-center gap-2">
-                        <BookOpen className="h-4 w-4 text-primary" /> البكالوريوس
-                      </div>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="flex cursor-pointer items-center gap-2 py-2">
-                    <Link href="/scholarships?level=masters">
-                      <div className="flex w-full items-center gap-2">
-                        <Award className="h-4 w-4 text-accent" /> الماجستير
-                      </div>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="flex cursor-pointer items-center gap-2 py-2">
-                    <Link href="/scholarships?level=phd">
-                      <div className="flex w-full items-center gap-2">
-                        <GraduationCap className="h-4 w-4 text-primary" /> الدكتوراه
-                      </div>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild className="flex cursor-pointer items-center gap-2 py-2">
-                    <Link href="/scholarships?funded=true">
-                      <div className="flex w-full items-center gap-2">
-                        <Award className="h-4 w-4 text-accent" /> تمويل كامل
-                      </div>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="flex cursor-pointer items-center gap-2 py-2">
-                    <Link href="/scholarships">
-                      <div className="flex w-full items-center gap-2">
-                        <Globe className="h-4 w-4 text-primary" /> حسب الدولة
-                      </div>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="flex cursor-pointer items-center gap-2 py-2">
-                    <Link href="/scholarships">
-                      <div className="flex w-full items-center gap-2">
-                        <MapPin className="h-4 w-4 text-accent" /> جميع المنح
-                      </div>
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {/* القائمة الديناميكية */}
+              <DynamicMenu 
+                location="header" 
+                className="flex items-center space-x-1 lg:space-x-2"
+                itemClassName="link-hover flex items-center px-3 py-2 text-sm font-medium text-foreground/80 transition-colors hover:text-primary"
+                activeItemClassName="text-primary"
+                dropdownClassName="animate-slide-up w-56"
+                dropdownItemClassName="flex cursor-pointer items-center gap-2 py-2"
+              />
               
-              <Link href="/articles">
-                <span className={`link-hover flex items-center px-3 py-2 text-sm font-medium transition-colors ${isActive('/articles') ? 'text-primary' : 'text-foreground/80 hover:text-primary'}`}>
-                  موارد تعليمية
-                </span>
-              </Link>
-              
-              <Link href="/success-stories">
-                <span className={`link-hover flex items-center px-3 py-2 text-sm font-medium transition-colors ${isActive('/success-stories') ? 'text-primary' : 'text-foreground/80 hover:text-primary'}`}>
-                  قصص نجاح
-                </span>
-              </Link>
-              
-              {/* عرض الصفحات الثابتة في الرأس */}
-              {headerPages?.filter(page => page.showInHeader && page.isPublished).map(page => (
-                <Link key={page.id} href={`/page/${page.slug}`}>
-                  <span className={`link-hover flex items-center px-3 py-2 text-sm font-medium transition-colors ${isPageActive(page.slug) ? 'text-primary' : 'text-foreground/80 hover:text-primary'}`}>
-                    {page.title}
-                  </span>
-                </Link>
-              ))}
-              
-              {/* الصفحات الافتراضية إذا لم يتم العثور على الصفحات الديناميكية */}
-              {(!headerPages || headerPages.length === 0) && (
+              {/* الاحتياطي في حال لم يتم تحميل القائمة الديناميكية */}
+              {(!useMenuStructure("header").data || useMenuStructure("header").isError) && (
                 <>
-                  <Link href="/about">
-                    <span className={`link-hover flex items-center px-3 py-2 text-sm font-medium transition-colors ${isActive('/about') ? 'text-primary' : 'text-foreground/80 hover:text-primary'}`}>
-                      عن الموقع
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="link-hover flex items-center px-3 py-2 text-sm font-medium text-foreground/80 transition-colors hover:text-primary">
+                        المنح الدراسية <ChevronDown className="mr-1 h-4 w-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="animate-slide-up w-56">
+                      <DropdownMenuItem asChild className="flex cursor-pointer items-center gap-2 py-2">
+                        <Link href="/scholarships?level=bachelor">
+                          <div className="flex w-full items-center gap-2">
+                            <BookOpen className="h-4 w-4 text-primary" /> البكالوريوس
+                          </div>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="flex cursor-pointer items-center gap-2 py-2">
+                        <Link href="/scholarships?level=masters">
+                          <div className="flex w-full items-center gap-2">
+                            <Award className="h-4 w-4 text-accent" /> الماجستير
+                          </div>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="flex cursor-pointer items-center gap-2 py-2">
+                        <Link href="/scholarships?level=phd">
+                          <div className="flex w-full items-center gap-2">
+                            <GraduationCap className="h-4 w-4 text-primary" /> الدكتوراه
+                          </div>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild className="flex cursor-pointer items-center gap-2 py-2">
+                        <Link href="/scholarships?funded=true">
+                          <div className="flex w-full items-center gap-2">
+                            <Award className="h-4 w-4 text-accent" /> تمويل كامل
+                          </div>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="flex cursor-pointer items-center gap-2 py-2">
+                        <Link href="/scholarships">
+                          <div className="flex w-full items-center gap-2">
+                            <Globe className="h-4 w-4 text-primary" /> حسب الدولة
+                          </div>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="flex cursor-pointer items-center gap-2 py-2">
+                        <Link href="/scholarships">
+                          <div className="flex w-full items-center gap-2">
+                            <MapPin className="h-4 w-4 text-accent" /> جميع المنح
+                          </div>
+                        </Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  
+                  <Link href="/articles">
+                    <span className={`link-hover flex items-center px-3 py-2 text-sm font-medium transition-colors ${isActive('/articles') ? 'text-primary' : 'text-foreground/80 hover:text-primary'}`}>
+                      موارد تعليمية
                     </span>
                   </Link>
                   
-                  <Link href="/contact">
-                    <span className={`link-hover flex items-center px-3 py-2 text-sm font-medium transition-colors ${isActive('/contact') ? 'text-primary' : 'text-foreground/80 hover:text-primary'}`}>
-                      اتصل بنا
+                  <Link href="/success-stories">
+                    <span className={`link-hover flex items-center px-3 py-2 text-sm font-medium transition-colors ${isActive('/success-stories') ? 'text-primary' : 'text-foreground/80 hover:text-primary'}`}>
+                      قصص نجاح
                     </span>
                   </Link>
+                  
+                  {/* عرض الصفحات الثابتة في الرأس */}
+                  {headerPages?.filter(page => page.showInHeader && page.isPublished).map(page => (
+                    <Link key={page.id} href={`/page/${page.slug}`}>
+                      <span className={`link-hover flex items-center px-3 py-2 text-sm font-medium transition-colors ${isPageActive(page.slug) ? 'text-primary' : 'text-foreground/80 hover:text-primary'}`}>
+                        {page.title}
+                      </span>
+                    </Link>
+                  ))}
                 </>
               )}
             </nav>

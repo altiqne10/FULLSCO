@@ -2,6 +2,8 @@ import { Link } from "wouter";
 import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin, Youtube } from "lucide-react";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 import { usePages } from "@/hooks/use-pages";
+import { DynamicMenu } from "@/components/dynamic-menu";
+import { useMenuStructure } from "@/hooks/use-menu";
 
 const Footer = () => {
   const { settings } = useSiteSettings();
@@ -59,73 +61,101 @@ const Footer = () => {
           
           <div>
             <h3 className="text-lg font-semibold mb-4">روابط سريعة</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link href="/">
-                  <span className="text-gray-400 hover:text-white">الرئيسية</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/scholarships">
-                  <span className="text-gray-400 hover:text-white">المنح الدراسية</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/articles">
-                  <span className="text-gray-400 hover:text-white">المدونة</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/success-stories">
-                  <span className="text-gray-400 hover:text-white">قصص النجاح</span>
-                </Link>
-              </li>
-              
-              {/* عرض الصفحات الثابتة في التذييل */}
-              {footerPages?.map(page => (
-                <li key={page.id}>
-                  <Link href={`/page/${page.slug}`}>
-                    <span className="text-gray-400 hover:text-white">{page.title}</span>
+            {/* القائمة الديناميكية للتذييل */}
+            <DynamicMenu 
+              location="footer" 
+              className="flex flex-col space-y-2"
+              itemClassName="text-gray-400 hover:text-white block"
+              activeItemClassName="text-white font-medium"
+              dropdownClassName="py-2 mt-2 space-y-1"
+              dropdownItemClassName="text-gray-400 hover:text-white block py-1"
+              parentIcon={false}
+            />
+            
+            {/* عرض القائمة الاحتياطية إذا لم تكن القائمة الديناميكية متاحة */}
+            {(!useMenuStructure("footer").data || useMenuStructure("footer").isError) && (
+              <ul className="space-y-2">
+                <li>
+                  <Link href="/">
+                    <span className="text-gray-400 hover:text-white">الرئيسية</span>
                   </Link>
                 </li>
-              ))}
-            </ul>
+                <li>
+                  <Link href="/scholarships">
+                    <span className="text-gray-400 hover:text-white">المنح الدراسية</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/articles">
+                    <span className="text-gray-400 hover:text-white">المدونة</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/success-stories">
+                    <span className="text-gray-400 hover:text-white">قصص النجاح</span>
+                  </Link>
+                </li>
+                
+                {/* عرض الصفحات الثابتة في التذييل */}
+                {footerPages?.map(page => (
+                  <li key={page.id}>
+                    <Link href={`/page/${page.slug}`}>
+                      <span className="text-gray-400 hover:text-white">{page.title}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           
           <div>
             <h3 className="text-lg font-semibold mb-4">المنح الدراسية</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link href="/scholarships?level=bachelor">
-                  <span className="text-gray-400 hover:text-white">البكالوريوس</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/scholarships?level=masters">
-                  <span className="text-gray-400 hover:text-white">الماجستير</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/scholarships?level=phd">
-                  <span className="text-gray-400 hover:text-white">الدكتوراه</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/scholarships?funded=true">
-                  <span className="text-gray-400 hover:text-white">تمويل كامل</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/scholarships">
-                  <span className="text-gray-400 hover:text-white">حسب الدولة</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/scholarships?field=all">
-                  <span className="text-gray-400 hover:text-white">حسب مجال الدراسة</span>
-                </Link>
-              </li>
-            </ul>
+            {/* قائمة جانبية خاصة بالمنح */}
+            <DynamicMenu 
+              location="sidebar" 
+              className="flex flex-col space-y-2"
+              itemClassName="text-gray-400 hover:text-white block"
+              activeItemClassName="text-white font-medium"
+              dropdownClassName="py-2 mt-2 space-y-1"
+              dropdownItemClassName="text-gray-400 hover:text-white block py-1"
+              parentIcon={false}
+            />
+            
+            {/* عرض القائمة الاحتياطية إذا لم تكن القائمة الديناميكية متاحة */}
+            {(!useMenuStructure("sidebar").data || useMenuStructure("sidebar").isError) && (
+              <ul className="space-y-2">
+                <li>
+                  <Link href="/scholarships?level=bachelor">
+                    <span className="text-gray-400 hover:text-white">البكالوريوس</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/scholarships?level=masters">
+                    <span className="text-gray-400 hover:text-white">الماجستير</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/scholarships?level=phd">
+                    <span className="text-gray-400 hover:text-white">الدكتوراه</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/scholarships?funded=true">
+                    <span className="text-gray-400 hover:text-white">تمويل كامل</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/scholarships">
+                    <span className="text-gray-400 hover:text-white">حسب الدولة</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/scholarships?field=all">
+                    <span className="text-gray-400 hover:text-white">حسب مجال الدراسة</span>
+                  </Link>
+                </li>
+              </ul>
+            )}
           </div>
           
           <div>

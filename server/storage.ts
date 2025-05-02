@@ -11,7 +11,9 @@ import {
   subscribers, Subscriber, InsertSubscriber,
   seoSettings, SeoSetting, InsertSeoSetting,
   siteSettings, SiteSetting, InsertSiteSetting,
-  pages, Page, InsertPage
+  pages, Page, InsertPage,
+  menus, Menu, InsertMenu,
+  menuItems, MenuItem, InsertMenuItem
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, count } from "drizzle-orm";
@@ -114,6 +116,24 @@ export interface IStorage {
   getScholarshipStats(): Promise<any>;
   getTrafficSources(): Promise<any>;
   getTopContent(type?: string, limit?: number): Promise<any>;
+  
+  // Menu operations
+  getMenu(id: number): Promise<Menu | undefined>;
+  getMenuBySlug(slug: string): Promise<Menu | undefined>;
+  getMenuByLocation(location: string): Promise<Menu | undefined>;
+  createMenu(menu: InsertMenu): Promise<Menu>;
+  updateMenu(id: number, menu: Partial<InsertMenu>): Promise<Menu | undefined>;
+  deleteMenu(id: number): Promise<boolean>;
+  listMenus(): Promise<Menu[]>;
+  
+  // Menu Item operations
+  getMenuItem(id: number): Promise<MenuItem | undefined>;
+  createMenuItem(item: InsertMenuItem): Promise<MenuItem>;
+  updateMenuItem(id: number, item: Partial<InsertMenuItem>): Promise<MenuItem | undefined>;
+  deleteMenuItem(id: number): Promise<boolean>;
+  listMenuItems(menuId: number, parentId?: number | null): Promise<MenuItem[]>;
+  getAllMenuItemsWithDetails(menuId: number): Promise<any[]>;
+  getMenuStructure(location: string): Promise<any>;
 }
 
 export class MemStorage implements IStorage {
