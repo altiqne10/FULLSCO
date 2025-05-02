@@ -74,8 +74,8 @@ export default function RichEditor({
   const [seoAnalysis, setSeoAnalysis] = useState<Array<{text: string, status: 'good' | 'warning' | 'bad', score: number}>>([]);
   const [readabilityAnalysis, setReadabilityAnalysis] = useState<Array<{text: string, status: 'good' | 'warning' | 'bad', score: number}>>([]);
   
-  // يمكن استخدام المفتاح المخزن في متغيرات البيئة
-  const apiKey = 'zxu5jgj7pezp6ynprlvz57e3jbj2acfcnbemx0vhm0cdcl1i';
+  // استخدام المفتاح المخزن في متغيرات البيئة
+  const apiKey = import.meta.env.VITE_TINYMCE_API_KEY || 'q471jgf8f3tf021wog7g5ja3spibypjg739h8z86gbz2fi6h';
   
   // التغييرات في المحتوى
   const handleEditorChange = (newContent: string) => {
