@@ -375,10 +375,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Post (article) routes
   app.post("/api/posts", isAdmin, async (req, res) => {
     try {
-      const data = insertPostSchema.parse(req.body);
+      // استخراج التصنيفات من البيانات المرسلة
+      const { tags, ...postData } = req.body;
+      
+      // إنشاء المقال في قاعدة البيانات
+      const data = insertPostSchema.parse(postData);
       const post = await storage.createPost(data);
-      res.status(201).json(post);
+      
+      // إضافة التصنيفات إلى المقال إذا وجدت
+      if (tags && Array.isArray(tags) && tags.length > 0) {
+        console.log(`إضافة ${tags.length} تصنيف للمقال ${post.id}`);
+        
+        for (const tagId of tags) {
+          try {
+            await storage.addTagToPost(post.id, parseInt(tagId));
+          } catch (tagError) {
+            console.error(`خطأ في إضافة التصنيف ${tagId} للمقال ${post.id}:`, tagError);
+          }
+        }
+      }
+      
+      // إرجاع المقال المنشأ مع التصنيفات
+      const postWithTags = await storage.getPost(post.id);
+      const postTags = await storage.getPostTags(post.id);
+      
+      res.status(201).json({ ...postWithTags, tags: postTags });
     } catch (error) {
+      console.error("خطأ في إنشاء المقال:", error);
       res.status(400).json({ message: (error as Error).message });
     }
   });
@@ -463,14 +486,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ message: "Invalid post ID" });
     }
     try {
-      const data = insertPostSchema.partial().parse(req.body);
+      // استخراج التصنيفات من البيانات المرسلة
+      const { tags, ...postData } = req.body;
+      
+      const data = insertPostSchema.partial().parse(postData);
       console.log("تحديث المقال باستخدام PUT:", id, data);
       
       const post = await storage.updatePost(id, data);
       if (!post) {
         return res.status(404).json({ message: "Post not found" });
       }
-      res.json(post);
+      
+      // تحديث التصنيفات إذا تم إرسالها
+      if (tags !== undefined) {
+        // حذف جميع التصنيفات الحالية
+        const currentTags = await storage.getPostTags(id);
+        for (const tag of currentTags) {
+          await storage.removeTagFromPost(id, tag.id);
+        }
+        
+        // إضافة التصنيفات الجديدة
+        if (Array.isArray(tags) && tags.length > 0) {
+          for (const tagId of tags) {
+            try {
+              await storage.addTagToPost(id, parseInt(tagId));
+            } catch (tagError) {
+              console.error(`خطأ في إضافة التصنيف ${tagId} للمقال ${id}:`, tagError);
+            }
+          }
+        }
+      }
+      
+      // إرجاع المقال المحدث مع التصنيفات
+      const updatedPost = await storage.getPost(id);
+      const postTags = await storage.getPostTags(id);
+      
+      res.json({ ...updatedPost, tags: postTags });
     } catch (error) {
       console.error("خطأ في تحديث المقال:", error);
       res.status(400).json({ message: (error as Error).message });
@@ -484,7 +535,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ message: "Invalid post ID" });
     }
     try {
-      const data = insertPostSchema.partial().parse(req.body);
+      // استخراج التصنيفات من البيانات المرسلة
+      const { tags, ...postData } = req.body;
+      
+      const data = insertPostSchema.partial().parse(postData);
       console.log("تحديث المقال باستخدام PATCH:", id, data);
       console.log("محتوى المقال:", data.content);
       
@@ -492,7 +546,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!post) {
         return res.status(404).json({ message: "Post not found" });
       }
-      res.json(post);
+      
+      // تحديث التصنيفات إذا تم إرسالها
+      if (tags !== undefined) {
+        // حذف جميع التصنيفات الحالية
+        const currentTags = await storage.getPostTags(id);
+        for (const tag of currentTags) {
+          await storage.removeTagFromPost(id, tag.id);
+        }
+        
+        // إضافة التصنيفات الجديدة
+        if (Array.isArray(tags) && tags.length > 0) {
+          for (const tagId of tags) {
+            try {
+              await storage.addTagToPost(id, parseInt(tagId));
+            } catch (tagError) {
+              console.error(`خطأ في إضافة التصنيف ${tagId} للمقال ${id}:`, tagError);
+            }
+          }
+        }
+      }
+      
+      // إرجاع المقال المحدث مع التصنيفات
+      const updatedPost = await storage.getPost(id);
+      const postTags = await storage.getPostTags(id);
+      
+      res.json({ ...updatedPost, tags: postTags });
     } catch (error) {
       console.error("خطأ في تحديث المقال:", error);
       res.status(400).json({ message: (error as Error).message });

@@ -129,6 +129,7 @@ export default function CreatePostPage() {
     authorId: number;
     createdAt: string;
     updatedAt: string;
+    tags?: any[]; // التصنيفات المرتبطة بالمقال
   };
 
   // استعلام عن بيانات المقال عند التعديل
