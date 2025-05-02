@@ -151,7 +151,7 @@ const AdminLayout = ({ children, title, actions, breadcrumbs }: AdminLayoutProps
                   <Button variant="ghost" size="icon" className="rounded-full">
                     <Avatar className="h-8 w-8">
                       <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                        {typeof user === 'object' && user && user.username ? user.username.substring(0, 2).toUpperCase() : 'UN'}
+                        {user ? 'AD' : 'UN'}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
