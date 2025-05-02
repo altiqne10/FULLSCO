@@ -456,6 +456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // تحديث المقال باستخدام PUT
   app.put("/api/posts/:id", isAdmin, async (req, res) => {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -463,12 +464,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     try {
       const data = insertPostSchema.partial().parse(req.body);
+      console.log("تحديث المقال باستخدام PUT:", id, data);
+      
       const post = await storage.updatePost(id, data);
       if (!post) {
         return res.status(404).json({ message: "Post not found" });
       }
       res.json(post);
     } catch (error) {
+      console.error("خطأ في تحديث المقال:", error);
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+  
+  // تحديث المقال باستخدام PATCH (لمزيد من التوافق مع الواجهات الأمامية)
+  app.patch("/api/posts/:id", isAdmin, async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid post ID" });
+    }
+    try {
+      const data = insertPostSchema.partial().parse(req.body);
+      console.log("تحديث المقال باستخدام PATCH:", id, data);
+      console.log("محتوى المقال:", data.content);
+      
+      const post = await storage.updatePost(id, data);
+      if (!post) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+      res.json(post);
+    } catch (error) {
+      console.error("خطأ في تحديث المقال:", error);
       res.status(400).json({ message: (error as Error).message });
     }
   });

@@ -115,7 +115,15 @@ export default function RichEditor({
   readOnly = false,
   className = '',
 }: RichEditorProps) {
-  const [content, setContent] = useState(initialValue);
+  const [content, setContent] = useState(() => {
+    // تصحيح القيمة الأولية لتجنب قيم null أو undefined
+    if (initialValue === null || initialValue === undefined) return '';
+    return initialValue;
+  });
+  
+  // طباعة قيمة المحتوى الأولي للتأكد من أنه يتم تلقيه بشكل صحيح
+  console.log("المحتوى الأولي للمحرر:", initialValue);
+  
   const [activeTab, setActiveTab] = useState('editor');
   const [wordCount, setWordCount] = useState(0);
   const [seoScore, setSeoScore] = useState(0);
@@ -126,6 +134,12 @@ export default function RichEditor({
   const [imageUrl, setImageUrl] = useState('');
   const [isLinkPopoverOpen, setIsLinkPopoverOpen] = useState(false);
   const [isImagePopoverOpen, setIsImagePopoverOpen] = useState(false);
+  
+  // تنقية القيمة الأولية من القيم الفارغة أو غير المحددة
+  const safeInitialValue = (() => {
+    if (initialValue === null || initialValue === undefined) return '';
+    return initialValue;
+  })();
   
   const editor = useEditor({
     extensions: [
@@ -179,12 +193,15 @@ export default function RichEditor({
         style: `height: ${typeof height === 'number' ? `${height}px` : height}; min-height: ${typeof minHeight === 'number' ? `${minHeight}px` : minHeight};`,
       },
     },
-    content: initialValue,
+    content: safeInitialValue,
     editable: !readOnly,
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
       setContent(html);
       onChange(html);
+      
+      // طباعة المحتوى الناتج للتأكد من تحديثه
+      console.log("محتوى المحرر محدث:", html);
       
       // حساب عدد الكلمات
       const textContent = stripHtml(html);
@@ -198,6 +215,18 @@ export default function RichEditor({
       }
     },
   });
+  
+  // عند تغيير القيمة الأولية، نقوم بتحديث المحرر
+  React.useEffect(() => {
+    if (editor && initialValue !== null && initialValue !== undefined) {
+      // تحقق من أن المحتوى الحالي مختلف عن المحتوى الجديد
+      const currentContent = editor.getHTML();
+      if (currentContent !== initialValue && initialValue.trim() !== '') {
+        console.log("تحديث محتوى المحرر من القيمة الأولية:", initialValue);
+        editor.commands.setContent(initialValue);
+      }
+    }
+  }, [editor, initialValue]);
   
   // تحليل السيو
   const analyzeSeo = (content: string, keyword: string, title: string, description: string) => {
