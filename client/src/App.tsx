@@ -25,9 +25,11 @@ import AdminMenus from "@/pages/admin/menus";
 import AdminMedia from "@/pages/admin/media";
 import AdminRoles from "@/pages/admin/roles";
 import AdminBackups from "@/pages/admin/backups";
-import CreateScholarship from "@/pages/admin/create-scholarship";
-import CreatePost from "@/pages/admin/create-post";
 import AdminLogin from "@/pages/admin/login";
+
+// استيراد صفحات الإنشاء الجديدة
+import CreateScholarship from "@/pages/admin/scholarships/create";
+import CreatePost from "@/pages/admin/posts/create";
 
 // New Admin Dashboard Component
 import NewDashboard from "@/pages/admin/new-dashboard";
