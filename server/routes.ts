@@ -333,22 +333,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/scholarships/:id", isAdmin, async (req, res) => {
+  // تعامل مع كل من PUT و PATCH لتحديث المنح الدراسية
+  app.put("/api/scholarships/:id", isAdmin, handleUpdateScholarship);
+  app.patch("/api/scholarships/:id", isAdmin, handleUpdateScholarship);
+  
+  // مُعالج مشترك لتحديث المنح الدراسية
+  async function handleUpdateScholarship(req: Request, res: Response) {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
       return res.status(400).json({ message: "Invalid scholarship ID" });
     }
     try {
+      console.log("Scholarship update request body:", JSON.stringify(req.body, null, 2));
+      
       const data = insertScholarshipSchema.partial().parse(req.body);
+      console.log("Parsed scholarship data:", JSON.stringify(data, null, 2));
+      
       const scholarship = await storage.updateScholarship(id, data);
       if (!scholarship) {
         return res.status(404).json({ message: "Scholarship not found" });
       }
       res.json(scholarship);
     } catch (error) {
+      console.error("Error updating scholarship:", error);
       res.status(400).json({ message: (error as Error).message });
     }
-  });
+  }
 
   app.delete("/api/scholarships/:id", isAdmin, async (req, res) => {
     const id = parseInt(req.params.id);
