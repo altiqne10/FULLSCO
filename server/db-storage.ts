@@ -20,6 +20,190 @@ import {
 import { IStorage } from "./storage";
 
 export class DatabaseStorage implements IStorage {
+  // Menu operations
+  async getMenu(id: number): Promise<Menu | undefined> {
+    try {
+      const [menu] = await db.select().from(menus).where(eq(menus.id, id));
+      return menu;
+    } catch (error) {
+      console.error("Error getting menu:", error);
+      return undefined;
+    }
+  }
+
+  async getMenuBySlug(slug: string): Promise<Menu | undefined> {
+    try {
+      const [menu] = await db.select().from(menus).where(eq(menus.slug, slug));
+      return menu;
+    } catch (error) {
+      console.error("Error getting menu by slug:", error);
+      return undefined;
+    }
+  }
+
+  async getMenuByLocation(location: string): Promise<Menu | undefined> {
+    try {
+      const [menu] = await db.select().from(menus).where(eq(menus.location, location));
+      return menu;
+    } catch (error) {
+      console.error("Error getting menu by location:", error);
+      return undefined;
+    }
+  }
+
+  async createMenu(menu: InsertMenu): Promise<Menu> {
+    try {
+      const [createdMenu] = await db.insert(menus).values(menu).returning();
+      return createdMenu;
+    } catch (error) {
+      console.error("Error creating menu:", error);
+      throw error;
+    }
+  }
+
+  async updateMenu(id: number, menu: Partial<InsertMenu>): Promise<Menu | undefined> {
+    try {
+      const [updatedMenu] = await db
+        .update(menus)
+        .set(menu)
+        .where(eq(menus.id, id))
+        .returning();
+      return updatedMenu;
+    } catch (error) {
+      console.error("Error updating menu:", error);
+      return undefined;
+    }
+  }
+
+  async deleteMenu(id: number): Promise<boolean> {
+    try {
+      // Delete all menu items associated with this menu first
+      await db.delete(menuItems).where(eq(menuItems.menuId, id));
+      
+      // Then delete the menu
+      const result = await db.delete(menus).where(eq(menus.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error("Error deleting menu:", error);
+      return false;
+    }
+  }
+
+  async listMenus(): Promise<Menu[]> {
+    try {
+      const menusList = await db.select().from(menus);
+      return menusList;
+    } catch (error) {
+      console.error("Error listing menus:", error);
+      return [];
+    }
+  }
+
+  // Menu Item operations
+  async getMenuItem(id: number): Promise<MenuItem | undefined> {
+    try {
+      const [menuItem] = await db.select().from(menuItems).where(eq(menuItems.id, id));
+      return menuItem;
+    } catch (error) {
+      console.error("Error getting menu item:", error);
+      return undefined;
+    }
+  }
+
+  async createMenuItem(item: InsertMenuItem): Promise<MenuItem> {
+    try {
+      const [createdItem] = await db.insert(menuItems).values(item).returning();
+      return createdItem;
+    } catch (error) {
+      console.error("Error creating menu item:", error);
+      throw error;
+    }
+  }
+
+  async updateMenuItem(id: number, item: Partial<InsertMenuItem>): Promise<MenuItem | undefined> {
+    try {
+      const [updatedItem] = await db
+        .update(menuItems)
+        .set(item)
+        .where(eq(menuItems.id, id))
+        .returning();
+      return updatedItem;
+    } catch (error) {
+      console.error("Error updating menu item:", error);
+      return undefined;
+    }
+  }
+
+  async deleteMenuItem(id: number): Promise<boolean> {
+    try {
+      // First, delete all child items
+      await db.delete(menuItems).where(eq(menuItems.parentId, id));
+      
+      // Then delete the item itself
+      const result = await db.delete(menuItems).where(eq(menuItems.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error("Error deleting menu item:", error);
+      return false;
+    }
+  }
+
+  async listMenuItems(menuId: number, parentId?: number | null): Promise<MenuItem[]> {
+    try {
+      let query = db.select().from(menuItems).where(eq(menuItems.menuId, menuId));
+      
+      if (parentId !== undefined) {
+        if (parentId === null) {
+          query = query.where(sql`${menuItems.parentId} IS NULL`);
+        } else {
+          query = query.where(eq(menuItems.parentId, parentId));
+        }
+      }
+      
+      return await query.orderBy(menuItems.order);
+    } catch (error) {
+      console.error("Error listing menu items:", error);
+      return [];
+    }
+  }
+
+  async getAllMenuItemsWithDetails(menuId: number): Promise<any[]> {
+    try {
+      return await db
+        .select()
+        .from(menuItems)
+        .where(eq(menuItems.menuId, menuId))
+        .orderBy(menuItems.order);
+    } catch (error) {
+      console.error("Error getting menu items with details:", error);
+      return [];
+    }
+  }
+
+  async getMenuStructure(location: string): Promise<any> {
+    try {
+      // First get the menu by location
+      const menu = await this.getMenuByLocation(location);
+      if (!menu) {
+        return null;
+      }
+      
+      // Then get all menu items for this menu
+      const items = await this.getAllMenuItemsWithDetails(menu.id);
+      
+      // Create the menu structure
+      return {
+        id: menu.id,
+        name: menu.name,
+        slug: menu.slug,
+        location: menu.location,
+        items: items || []
+      };
+    } catch (error) {
+      console.error(`Error getting menu structure for ${location}:`, error);
+      return null;
+    }
+  }
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     // Use raw query since the schema differs from actual table
