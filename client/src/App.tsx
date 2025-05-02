@@ -136,6 +136,7 @@ function App() {
                     <Route path="/admin/subscribers" component={AdminSubscribers} />
                     <Route path="/admin/success-stories" component={AdminSuccessStories} />
                     <Route path="/admin/success-stories/create" component={CreateSuccessStory} />
+                    <Route path="/admin/success-stories/edit/:id" component={EditSuccessStory} />
                     <Route path="/admin/home-layout" component={AdminHomeLayout} />
                     <Route path="/admin/appearance" component={AdminAppearance} />
                     <Route path="/admin/messages" component={AdminMessages} />

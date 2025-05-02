@@ -108,7 +108,7 @@ export function useSuccessStories() {
 export function useSuccessStory(id: number) {
   const { data: successStory, isLoading, error } = useQuery<SuccessStory>({
     queryKey: ["/api/success-stories", id],
-    queryFn: getQueryFn(),
+    queryFn: getQueryFn({ on401: "returnNull" }),
     enabled: !!id,
   });
 
