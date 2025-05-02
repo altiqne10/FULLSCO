@@ -292,21 +292,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(scholarships);
   });
 
+  app.get("/api/scholarships/slug/:slug", async (req, res) => {
+    const slug = req.params.slug;
+    const scholarship = await storage.getScholarshipBySlug(slug);
+    if (!scholarship) {
+      return res.status(404).json({ message: "Scholarship not found" });
+    }
+    res.json(scholarship);
+  });
+  
   app.get("/api/scholarships/:id", async (req, res) => {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
       return res.status(400).json({ message: "Invalid scholarship ID" });
     }
     const scholarship = await storage.getScholarship(id);
-    if (!scholarship) {
-      return res.status(404).json({ message: "Scholarship not found" });
-    }
-    res.json(scholarship);
-  });
-
-  app.get("/api/scholarships/slug/:slug", async (req, res) => {
-    const slug = req.params.slug;
-    const scholarship = await storage.getScholarshipBySlug(slug);
     if (!scholarship) {
       return res.status(404).json({ message: "Scholarship not found" });
     }

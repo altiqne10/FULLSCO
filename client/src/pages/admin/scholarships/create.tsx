@@ -145,11 +145,36 @@ export default function CreateScholarshipPage() {
     }
   });
   
+  // تعريف نوع البيانات للمنحة الدراسية
+  type ScholarshipData = {
+    id: number;
+    title: string;
+    slug: string;
+    description: string;
+    content: string | null;
+    countryId: number | null;
+    levelId: number | null;
+    categoryId: number | null;
+    university: string | null;
+    department: string | null;
+    website: string | null;
+    startDate: string | null;
+    endDate: string | null;
+    isFeatured: boolean;
+    isPublished: boolean;
+    amount: string;
+    currency: string | null;
+    seoTitle: string | null;
+    seoDescription: string | null;
+    seoKeywords: string | null;
+    focusKeyword: string | null;
+  };
+
   // استعلام عن بيانات المنحة الحالية عند التعديل
-  const { data: scholarshipData, isLoading: isLoadingScholarship } = useQuery<any>({
+  const { data: scholarshipData, isLoading: isLoadingScholarship } = useQuery<ScholarshipData>({
     queryKey: ['/api/scholarships', scholarshipId],
     queryFn: async () => {
-      if (!scholarshipId) return null;
+      if (!scholarshipId) return Promise.reject('No scholarship ID provided');
       // نطبع رسالة للتأكد من تنفيذ الاستعلام
       console.log('Fetching scholarship with ID:', scholarshipId);
       
