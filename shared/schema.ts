@@ -1,6 +1,7 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json, varchar, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 // Users Table
 export const users = pgTable("users", {
@@ -316,3 +317,103 @@ export type InsertSiteSetting = z.infer<typeof insertSiteSettingsSchema>;
 
 export type Page = typeof pages.$inferSelect;
 export type InsertPage = z.infer<typeof insertPageSchema>;
+
+// Menu Location Enum
+export const menuLocationEnum = pgEnum('menu_location', ['header', 'footer', 'sidebar', 'mobile']);
+
+// Menu Item Type Enum
+export const menuItemTypeEnum = pgEnum('menu_item_type', ['page', 'category', 'level', 'country', 'link', 'scholarship', 'post']);
+
+// Menus Table
+export const menus = pgTable("menus", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  location: menuLocationEnum("location").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const insertMenuSchema = createInsertSchema(menus).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+// Menu Items Table
+export const menuItems = pgTable("menu_items", {
+  id: serial("id").primaryKey(),
+  menuId: integer("menu_id").references(() => menus.id).notNull(),
+  parentId: integer("parent_id").references(() => menuItems.id),
+  title: text("title").notNull(),
+  type: menuItemTypeEnum("type").notNull(),
+  url: text("url"), // Used for direct links
+  targetBlank: boolean("target_blank").default(false),
+  pageId: integer("page_id").references(() => pages.id),
+  categoryId: integer("category_id").references(() => categories.id),
+  levelId: integer("level_id").references(() => levels.id),
+  countryId: integer("country_id").references(() => countries.id),
+  scholarshipId: integer("scholarship_id").references(() => scholarships.id),
+  postId: integer("post_id").references(() => posts.id),
+  order: integer("order").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+
+export const insertMenuItemSchema = createInsertSchema(menuItems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+// Define relations
+export const menusRelations = relations(menus, ({ many }) => ({
+  menuItems: many(menuItems)
+}));
+
+export const menuItemsRelations = relations(menuItems, ({ one, many }) => ({
+  menu: one(menus, {
+    fields: [menuItems.menuId],
+    references: [menus.id]
+  }),
+  parent: one(menuItems, {
+    fields: [menuItems.parentId],
+    references: [menuItems.id]
+  }),
+  children: many(menuItems, {
+    relationName: "parent_child"
+  }),
+  page: one(pages, {
+    fields: [menuItems.pageId],
+    references: [pages.id]
+  }),
+  category: one(categories, {
+    fields: [menuItems.categoryId],
+    references: [categories.id]
+  }),
+  level: one(levels, {
+    fields: [menuItems.levelId],
+    references: [levels.id]
+  }),
+  country: one(countries, {
+    fields: [menuItems.countryId],
+    references: [countries.id]
+  }),
+  scholarship: one(scholarships, {
+    fields: [menuItems.scholarshipId],
+    references: [scholarships.id]
+  }),
+  post: one(posts, {
+    fields: [menuItems.postId],
+    references: [posts.id]
+  })
+}));
+
+// Export Menu Types
+export type Menu = typeof menus.$inferSelect;
+export type InsertMenu = z.infer<typeof insertMenuSchema>;
+
+export type MenuItem = typeof menuItems.$inferSelect;
+export type InsertMenuItem = z.infer<typeof insertMenuItemSchema>;

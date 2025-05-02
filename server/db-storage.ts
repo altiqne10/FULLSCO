@@ -13,7 +13,9 @@ import {
   subscribers, Subscriber, InsertSubscriber,
   seoSettings, SeoSetting, InsertSeoSetting,
   siteSettings, SiteSetting, InsertSiteSetting,
-  pages, Page, InsertPage
+  pages, Page, InsertPage,
+  menus, Menu, InsertMenu,
+  menuItems, MenuItem, InsertMenuItem
 } from "@shared/schema";
 import { IStorage } from "./storage";
 
