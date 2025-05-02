@@ -246,6 +246,10 @@ export default function CreateScholarshipPage() {
     mutationFn: async (scholarshipData: ScholarshipFormValues) => {
       if (!scholarshipId) throw new Error('معرف المنحة غير موجود');
       
+      // تسجيل بيانات النموذج قبل الإرسال
+      console.log("بيانات المنحة قبل الإرسال:", scholarshipData);
+      console.log("محتوى المنحة:", scholarshipData.content);
+      
       // تحويل ID إلى أرقام
       const payload = {
         ...scholarshipData,
@@ -253,6 +257,8 @@ export default function CreateScholarshipPage() {
         levelId: parseInt(scholarshipData.levelId),
         categoryId: parseInt(scholarshipData.categoryId),
       };
+      
+      console.log("البيانات التي سيتم إرسالها:", payload);
       
       const response = await fetch(`/api/scholarships/${scholarshipId}`, {
         method: 'PATCH',
@@ -262,10 +268,13 @@ export default function CreateScholarshipPage() {
       
       if (!response.ok) {
         const errorData = await response.json();
+        console.error("خطأ في تحديث المنحة:", errorData);
         throw new Error(errorData.message || 'فشل في تحديث المنحة');
       }
       
-      return response.json();
+      const responseData = await response.json();
+      console.log("تم تحديث المنحة بنجاح:", responseData);
+      return responseData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/scholarships'] });
@@ -400,6 +409,10 @@ export default function CreateScholarshipPage() {
   // تحميل بيانات المنحة عند التحرير
   useEffect(() => {
     if (scholarshipData && isEditMode) {
+      // تسجيل البيانات للتصحيح
+      console.log("تحميل بيانات المنحة للتعديل:", scholarshipData);
+      console.log("محتوى المنحة:", scholarshipData.content);
+      
       const startDate = scholarshipData.startDate ? new Date(scholarshipData.startDate) : null;
       const endDate = scholarshipData.endDate ? new Date(scholarshipData.endDate) : null;
       
