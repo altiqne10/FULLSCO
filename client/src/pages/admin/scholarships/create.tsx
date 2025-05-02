@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useLocation } from 'wouter';
+import { useLocation, useParams } from 'wouter';
 import AdminLayout from '@/components/admin/admin-layout';
 import RichEditor from '@/components/ui/rich-editor';
 import { useToast } from '@/hooks/use-toast';
@@ -107,6 +107,9 @@ type ScholarshipFormValues = z.infer<typeof scholarshipFormSchema>;
 export default function CreateScholarshipPage() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const params = useParams();
+  const scholarshipId = params?.id ? parseInt(params.id) : null;
+  const isEditMode = !!scholarshipId;
   const queryClient = useQueryClient();
   const [showExitAlert, setShowExitAlert] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -142,15 +145,27 @@ export default function CreateScholarshipPage() {
     }
   });
   
+  // استعلام عن بيانات المنحة الحالية عند التعديل
+  const { data: scholarshipData, isLoading: isLoadingScholarship } = useQuery({
+    queryKey: ['/api/scholarships', scholarshipId],
+    queryFn: async () => {
+      if (!scholarshipId) return null;
+      const response = await fetch(`/api/scholarships/${scholarshipId}`);
+      if (!response.ok) throw new Error('فشل في استلام بيانات المنحة');
+      return response.json();
+    },
+    enabled: !!scholarshipId, // تفعيل الاستعلام فقط عند وجود معرف المنحة
+  });
+  
   // إضافة منحة جديدة
   const addScholarshipMutation = useMutation({
-    mutationFn: async (newScholarship: ScholarshipFormValues) => {
+    mutationFn: async (scholarshipData: ScholarshipFormValues) => {
       // تحويل ID إلى أرقام
       const payload = {
-        ...newScholarship,
-        countryId: parseInt(newScholarship.countryId),
-        levelId: parseInt(newScholarship.levelId),
-        categoryId: parseInt(newScholarship.categoryId),
+        ...scholarshipData,
+        countryId: parseInt(scholarshipData.countryId),
+        levelId: parseInt(scholarshipData.levelId),
+        categoryId: parseInt(scholarshipData.categoryId),
       };
       
       const response = await fetch('/api/scholarships', {
@@ -178,6 +193,51 @@ export default function CreateScholarshipPage() {
       toast({
         title: 'خطأ',
         description: `فشل في إضافة المنحة: ${error.message}`,
+        variant: 'destructive',
+      });
+      setIsSubmitting(false);
+    }
+  });
+  
+  // تحديث منحة موجودة
+  const updateScholarshipMutation = useMutation({
+    mutationFn: async (scholarshipData: ScholarshipFormValues) => {
+      if (!scholarshipId) throw new Error('معرف المنحة غير موجود');
+      
+      // تحويل ID إلى أرقام
+      const payload = {
+        ...scholarshipData,
+        countryId: parseInt(scholarshipData.countryId),
+        levelId: parseInt(scholarshipData.levelId),
+        categoryId: parseInt(scholarshipData.categoryId),
+      };
+      
+      const response = await fetch(`/api/scholarships/${scholarshipId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'فشل في تحديث المنحة');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/scholarships'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scholarships', scholarshipId] });
+      toast({
+        title: 'تم تحديث المنحة بنجاح',
+        description: 'تم تحديث بيانات المنحة الدراسية',
+      });
+      navigate('/admin/scholarships');
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'خطأ',
+        description: `فشل في تحديث المنحة: ${error.message}`,
         variant: 'destructive',
       });
       setIsSubmitting(false);
@@ -214,7 +274,11 @@ export default function CreateScholarshipPage() {
   // معالجة تقديم النموذج
   const onSubmit = (data: ScholarshipFormValues) => {
     setIsSubmitting(true);
-    addScholarshipMutation.mutate(data);
+    if (isEditMode) {
+      updateScholarshipMutation.mutate(data);
+    } else {
+      addScholarshipMutation.mutate(data);
+    }
   };
   
   // إنشاء slug من العنوان
@@ -291,8 +355,41 @@ export default function CreateScholarshipPage() {
     </div>
   );
   
+  // تحميل بيانات المنحة عند التحرير
+  useEffect(() => {
+    if (scholarshipData && isEditMode) {
+      const startDate = scholarshipData.startDate ? new Date(scholarshipData.startDate) : null;
+      const endDate = scholarshipData.endDate ? new Date(scholarshipData.endDate) : null;
+      
+      form.reset({
+        title: scholarshipData.title || '',
+        slug: scholarshipData.slug || '',
+        description: scholarshipData.description || '',
+        content: scholarshipData.content || '',
+        countryId: scholarshipData.countryId ? String(scholarshipData.countryId) : '',
+        levelId: scholarshipData.levelId ? String(scholarshipData.levelId) : '',
+        categoryId: scholarshipData.categoryId ? String(scholarshipData.categoryId) : '',
+        university: scholarshipData.university || '',
+        department: scholarshipData.department || '',
+        website: scholarshipData.website || '',
+        startDate: startDate,
+        endDate: endDate,
+        isFeatured: scholarshipData.isFeatured || false,
+        isPublished: scholarshipData.isPublished || true,
+        amount: scholarshipData.amount || '',
+        currency: scholarshipData.currency || '',
+        seoTitle: scholarshipData.seoTitle || '',
+        seoDescription: scholarshipData.seoDescription || '',
+        seoKeywords: scholarshipData.seoKeywords || '',
+        focusKeyword: scholarshipData.focusKeyword || '',
+      });
+    }
+  }, [scholarshipData, isEditMode, form]);
+
   return (
-    <AdminLayout title="إضافة منحة جديدة" actions={pageActions}>
+    <AdminLayout 
+      title={isEditMode ? "تعديل المنحة الدراسية" : "إضافة منحة جديدة"} 
+      actions={pageActions}>
       <div className="mb-6">
         <Button
           variant="ghost"
