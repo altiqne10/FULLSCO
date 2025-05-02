@@ -272,17 +272,14 @@ const AdminScholarships = () => {
                                 <ExternalLink className="h-4 w-4" />
                               </Button>
                             </Link>
-                            <Link
-                              href={`/admin/scholarships/edit/${scholarship.id}`}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => navigate(`/admin/scholarships/edit/${scholarship.id}`)}
                             >
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            </Link>
+                              <Edit className="h-4 w-4" />
+                            </Button>
                             <Button
                               variant="ghost"
                               size="sm"

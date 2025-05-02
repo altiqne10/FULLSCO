@@ -146,15 +146,32 @@ export default function CreateScholarshipPage() {
   });
   
   // استعلام عن بيانات المنحة الحالية عند التعديل
-  const { data: scholarshipData, isLoading: isLoadingScholarship } = useQuery({
+  const { data: scholarshipData, isLoading: isLoadingScholarship } = useQuery<any>({
     queryKey: ['/api/scholarships', scholarshipId],
     queryFn: async () => {
       if (!scholarshipId) return null;
-      const response = await fetch(`/api/scholarships/${scholarshipId}`);
-      if (!response.ok) throw new Error('فشل في استلام بيانات المنحة');
-      return response.json();
+      // نطبع رسالة للتأكد من تنفيذ الاستعلام
+      console.log('Fetching scholarship with ID:', scholarshipId);
+      
+      try {
+        const response = await fetch(`/api/scholarships/${scholarshipId}`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Error loading scholarship:', errorData);
+          throw new Error(errorData.message || 'فشل في استلام بيانات المنحة');
+        }
+        const data = await response.json();
+        console.log('Scholarship data loaded:', data);
+        return data;
+      } catch (error) {
+        console.error('Failed to fetch scholarship:', error);
+        throw error;
+      }
     },
     enabled: !!scholarshipId, // تفعيل الاستعلام فقط عند وجود معرف المنحة
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    gcTime: 0,
   });
   
   // إضافة منحة جديدة
