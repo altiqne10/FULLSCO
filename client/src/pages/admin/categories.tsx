@@ -1,6 +1,23 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { PlusCircle, Edit, Trash2, RefreshCw, Check, X } from 'lucide-react';
+import { 
+  PlusCircle, 
+  Edit, 
+  Trash2, 
+  RefreshCw, 
+  Check, 
+  X, 
+  FolderOpen, 
+  Search, 
+  ArrowUpDown, 
+  Filter,
+  ChevronDown,
+  MoreHorizontal,
+  Flag,
+  BookOpenCheck,
+  BookMarked,
+  Globe
+} from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,9 +28,29 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle 
+} from '@/components/ui/alert-dialog';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 
 // زودج سكيما للتحقق من صحة البيانات
@@ -233,7 +270,64 @@ export default function CategoriesPage() {
 
   return (
     <AdminLayout title="إدارة التصنيفات" actions={actions}>
-      <div className="space-y-6">
+      <div className="space-y-8">
+        {/* الإحصائيات وبطاقات المعلومات */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="bg-gradient-to-br from-blue-50 to-white border-none shadow-md">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-start">
+                <div className="bg-blue-100 p-3 rounded-xl">
+                  <FolderOpen className="h-5 w-5 text-blue-600" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-1">
+                <h3 className="text-3xl font-bold text-gray-800">
+                  {categories ? categories.length : 0}
+                </h3>
+                <p className="text-gray-500">إجمالي التصنيفات</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-purple-50 to-white border-none shadow-md">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-start">
+                <div className="bg-purple-100 p-3 rounded-xl">
+                  <BookOpenCheck className="h-5 w-5 text-purple-600" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-1">
+                <h3 className="text-3xl font-bold text-gray-800">
+                  {categories ? categories.filter(cat => cat.description && cat.description.length > 0).length : 0}
+                </h3>
+                <p className="text-gray-500">تصنيفات مع وصف</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-amber-50 to-white border-none shadow-md">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-start">
+                <div className="bg-amber-100 p-3 rounded-xl">
+                  <Globe className="h-5 w-5 text-amber-600" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-1">
+                <h3 className="text-3xl font-bold text-gray-800">
+                  {categories ? categories.filter(cat => cat.slug && cat.slug.length > 5).length : 0}
+                </h3>
+                <p className="text-gray-500">تصنيفات SEO-friendly</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
         {/* نافذة إضافة تصنيف */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
@@ -252,7 +346,12 @@ export default function CategoriesPage() {
                     <FormItem>
                       <FormLabel>اسم التصنيف</FormLabel>
                       <FormControl>
-                        <Input {...field} onChange={handleNameChangeAdd} placeholder="مثال: دراسات عليا" />
+                        <Input 
+                          {...field}
+                          onChange={handleNameChangeAdd} 
+                          placeholder="مثال: دراسات عليا"
+                          className="border border-gray-300 focus:border-blue-500"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -265,7 +364,12 @@ export default function CategoriesPage() {
                     <FormItem>
                       <FormLabel>الاسم المختصر (Slug)</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="مثال: graduate-studies" dir="ltr" />
+                        <Input 
+                          {...field} 
+                          placeholder="مثال: graduate-studies" 
+                          dir="ltr"
+                          className="border border-gray-300 focus:border-blue-500 font-mono text-sm"
+                        />
                       </FormControl>
                       <FormDescription>
                         سيستخدم هذا في عنوان URL. يجب أن يحتوي على أحرف صغيرة وأرقام وشرطات فقط.
@@ -281,14 +385,22 @@ export default function CategoriesPage() {
                     <FormItem>
                       <FormLabel>الوصف</FormLabel>
                       <FormControl>
-                        <Textarea {...field} placeholder="وصف اختياري للتصنيف" />
+                        <Textarea 
+                          {...field} 
+                          placeholder="وصف اختياري للتصنيف" 
+                          className="resize-none min-h-[100px] border border-gray-300 focus:border-blue-500"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 <DialogFooter>
-                  <Button type="submit" disabled={addMutation.isPending}>
+                  <Button 
+                    type="submit" 
+                    disabled={addMutation.isPending} 
+                    className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
+                  >
                     {addMutation.isPending ? (
                       <>
                         <RefreshCw className="ml-2 h-4 w-4 animate-spin" />
@@ -307,56 +419,131 @@ export default function CategoriesPage() {
           </DialogContent>
         </Dialog>
 
-        <Card>
+        {/* البحث وقائمة التصنيفات */}
+        <Card className="border-0 shadow-md">
           <CardHeader>
-            <CardTitle>قائمة التصنيفات</CardTitle>
+            <CardTitle className="flex items-center">
+              <FolderOpen className="ml-2 h-5 w-5 text-blue-500" />
+              قائمة التصنيفات
+            </CardTitle>
             <CardDescription>
               جميع تصنيفات المنح الدراسية المتوفرة في الموقع
             </CardDescription>
+            
+            {/* شريط البحث والفلترة */}
+            <div className="flex flex-col md:flex-row gap-4 mt-4">
+              <div className="relative w-full md:w-[300px]">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input 
+                  placeholder="البحث عن تصنيف..." 
+                  className="pl-3 pr-9 bg-gray-50 border-gray-200 focus:border-blue-500" 
+                />
+              </div>
+              <div className="space-x-2 rtl:space-x-reverse space-y-2 md:space-y-0">
+                <Button variant="outline" className="text-xs h-9">
+                  <Filter className="ml-1 h-3 w-3" />
+                  مع وصف
+                </Button>
+                <Button variant="outline" className="text-xs h-9">
+                  <ArrowUpDown className="ml-1 h-3 w-3" />
+                  ترتيب حسب الاسم
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="flex justify-center items-center h-32">
-                <RefreshCw className="h-6 w-6 animate-spin" />
-                <span className="mr-2">جاري التحميل...</span>
+              <div className="space-y-6">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex gap-4 items-center">
+                    <Skeleton className="h-12 w-12 rounded-md bg-gray-200" />
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="h-4 w-3/4 bg-gray-200" />
+                      <Skeleton className="h-4 w-1/2 bg-gray-200" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : isError ? (
-              <div className="text-center py-4 text-red-500">
-                <p>حدث خطأ أثناء تحميل البيانات. يرجى المحاولة مرة أخرى.</p>
-                <Button variant="outline" onClick={() => refetch()} className="mt-2">
+              <div className="text-center p-8 rounded-lg bg-red-50 border border-red-100">
+                <X className="h-12 w-12 mx-auto text-red-400 mb-3" />
+                <h3 className="text-lg font-medium text-red-800 mb-2">حدث خطأ أثناء تحميل البيانات</h3>
+                <p className="text-red-600 mb-4">لم نتمكن من جلب التصنيفات. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.</p>
+                <Button onClick={() => refetch()} className="bg-white text-red-600 border border-red-300 hover:bg-red-50">
+                  <RefreshCw className="ml-2 h-4 w-4" />
                   إعادة المحاولة
                 </Button>
               </div>
             ) : categories && categories.length > 0 ? (
-              <div className="overflow-auto">
+              <div className="rounded-md border overflow-hidden">
                 <Table>
-                  <TableHeader>
+                  <TableHeader className="bg-gray-50">
                     <TableRow>
                       <TableHead className="w-12 text-right">الرقم</TableHead>
                       <TableHead className="text-right">الاسم</TableHead>
                       <TableHead className="text-right">الاسم المختصر</TableHead>
                       <TableHead className="text-right">الوصف</TableHead>
-                      <TableHead className="text-left w-[120px]">الإجراءات</TableHead>
+                      <TableHead className="text-left w-[100px]">الإجراءات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {categories.map((category) => (
-                      <TableRow key={category.id}>
-                        <TableCell>{category.id}</TableCell>
-                        <TableCell className="font-medium">{category.name}</TableCell>
-                        <TableCell dir="ltr">{category.slug}</TableCell>
-                        <TableCell>{category.description || "—"}</TableCell>
+                      <TableRow key={category.id} className="hover:bg-blue-50/30">
+                        <TableCell className="font-medium">{category.id}</TableCell>
                         <TableCell>
-                          <div className="flex justify-end gap-2">
-                            <Button size="icon" variant="ghost" onClick={() => handleEdit(category)}>
-                              <Edit className="h-4 w-4" />
-                              <span className="sr-only">تعديل</span>
-                            </Button>
-                            <Button size="icon" variant="ghost" className="text-red-500" onClick={() => handleDelete(category)}>
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">حذف</span>
-                            </Button>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
+                                {category.name.substring(0, 2)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{category.name}</p>
+                              <p className="text-xs text-gray-500">تصنيف #{category.id}</p>
+                            </div>
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200 font-mono text-xs" dir="ltr">
+                            {category.slug}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="max-w-[300px] truncate">
+                            {category.description ? 
+                              category.description 
+                              : 
+                              <span className="text-gray-400 text-sm italic">لا يوجد وصف</span>
+                            }
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">القائمة</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem onClick={() => handleEdit(category)}>
+                                <Edit className="ml-2 h-4 w-4" />
+                                تعديل التصنيف
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <Flag className="ml-2 h-4 w-4" />
+                                عرض المنح المرتبطة
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                onClick={() => handleDelete(category)}
+                                className="text-red-600 focus:bg-red-50 focus:text-red-600"
+                              >
+                                <Trash2 className="ml-2 h-4 w-4" />
+                                حذف التصنيف
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -364,9 +551,15 @@ export default function CategoriesPage() {
                 </Table>
               </div>
             ) : (
-              <div className="text-center py-6 text-muted-foreground">
-                <p>لا توجد تصنيفات حاليًا.</p>
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(true)} className="mt-2">
+              <div className="text-center py-12 px-6 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                <FolderOpen className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                <h3 className="text-lg font-medium text-gray-800 mb-2">لا توجد تصنيفات حاليًا</h3>
+                <p className="text-gray-500 max-w-md mx-auto mb-6">لم يتم إضافة أي تصنيفات بعد. التصنيفات تساعد في تنظيم المنح الدراسية وتسهل على المستخدمين العثور عليها.</p>
+                <Button
+                  onClick={() => setIsAddDialogOpen(true)}
+                  className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
+                >
+                  <PlusCircle className="ml-2 h-4 w-4" />
                   إضافة تصنيف جديد
                 </Button>
               </div>
@@ -374,11 +567,15 @@ export default function CategoriesPage() {
           </CardContent>
         </Card>
 
+        
         {/* نافذة تعديل التصنيف */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>تعديل التصنيف</DialogTitle>
+              <DialogTitle className="flex items-center">
+                <Edit className="ml-2 h-5 w-5 text-blue-500" />
+                تعديل التصنيف
+              </DialogTitle>
               <DialogDescription>
                 قم بتعديل بيانات التصنيف هنا. اضغط على حفظ عند الانتهاء.
               </DialogDescription>
@@ -393,7 +590,12 @@ export default function CategoriesPage() {
                       <FormItem>
                         <FormLabel>اسم التصنيف</FormLabel>
                         <FormControl>
-                          <Input {...field} onChange={handleNameChangeEdit} placeholder="مثال: دراسات عليا" />
+                          <Input 
+                            {...field} 
+                            onChange={handleNameChangeEdit} 
+                            placeholder="مثال: دراسات عليا"
+                            className="border border-gray-300 focus:border-blue-500" 
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -406,7 +608,12 @@ export default function CategoriesPage() {
                       <FormItem>
                         <FormLabel>الاسم المختصر (Slug)</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="مثال: graduate-studies" dir="ltr" />
+                          <Input 
+                            {...field} 
+                            placeholder="مثال: graduate-studies" 
+                            dir="ltr"
+                            className="border border-gray-300 focus:border-blue-500 font-mono text-sm" 
+                          />
                         </FormControl>
                         <FormDescription>
                           سيستخدم هذا في عنوان URL. يجب أن يحتوي على أحرف صغيرة وأرقام وشرطات فقط.
@@ -422,14 +629,22 @@ export default function CategoriesPage() {
                       <FormItem>
                         <FormLabel>الوصف</FormLabel>
                         <FormControl>
-                          <Textarea {...field} placeholder="وصف اختياري للتصنيف" />
+                          <Textarea 
+                            {...field} 
+                            placeholder="وصف اختياري للتصنيف"
+                            className="resize-none min-h-[100px] border border-gray-300 focus:border-blue-500" 
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   <DialogFooter>
-                    <Button type="submit" disabled={updateMutation.isPending}>
+                    <Button 
+                      type="submit" 
+                      disabled={updateMutation.isPending} 
+                      className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
+                    >
                       {updateMutation.isPending ? (
                         <>
                           <RefreshCw className="ml-2 h-4 w-4 animate-spin" />
@@ -438,7 +653,7 @@ export default function CategoriesPage() {
                       ) : (
                         <>
                           <Check className="ml-2 h-4 w-4" />
-                          حفظ
+                          حفظ التغييرات
                         </>
                       )}
                     </Button>
@@ -448,27 +663,48 @@ export default function CategoriesPage() {
             )}
           </DialogContent>
         </Dialog>
-
-        {/* نافذة تأكيد الحذف */}
+        
+        {/* نافذة حذف التصنيف */}
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <AlertDialogContent>
+          <AlertDialogContent className="max-w-[450px]">
             <AlertDialogHeader>
-              <AlertDialogTitle>هل أنت متأكد من حذف هذا التصنيف؟</AlertDialogTitle>
-              <AlertDialogDescription>
-                هذا الإجراء لا يمكن التراجع عنه. سيتم حذف التصنيف نهائيًا من قاعدة البيانات.
+              <AlertDialogTitle className="text-lg text-red-600 font-bold flex items-center">
+                <Trash2 className="ml-2 h-5 w-5" />
+                تأكيد حذف التصنيف
+              </AlertDialogTitle>
+              <AlertDialogDescription className="space-y-4">
+                <p>هل أنت متأكد من رغبتك في حذف هذا التصنيف؟ هذا الإجراء لا يمكن التراجع عنه.</p>
+                
                 {selectedCategory && (
-                  <p className="font-medium mt-2">
-                    التصنيف: {selectedCategory.name}
-                  </p>
+                  <div className="mt-4 p-4 bg-gray-50 rounded-md border border-gray-200">
+                    <div className="flex items-center mb-2">
+                      <div className="ml-3 bg-blue-100 text-blue-700 p-2 rounded-full">
+                        <FolderOpen className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium">{selectedCategory.name}</h4>
+                        <p className="text-sm text-gray-500 dir-ltr">{selectedCategory.slug}</p>
+                      </div>
+                    </div>
+                    {selectedCategory.description && (
+                      <p className="text-sm text-gray-600 mt-2 border-t border-gray-200 pt-2">
+                        {selectedCategory.description}
+                      </p>
+                    )}
+                  </div>
                 )}
+                
+                <p className="mt-2 text-sm">
+                  ملاحظة: حذف هذا التصنيف قد يؤثر على المنح الدراسية المرتبطة به.
+                </p>
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>إلغاء</AlertDialogCancel>
-              <AlertDialogAction 
+            <AlertDialogFooter className="gap-2">
+              <AlertDialogCancel className="w-full">إلغاء</AlertDialogCancel>
+              <AlertDialogAction
                 onClick={confirmDelete}
-                className="bg-red-500 hover:bg-red-600 text-white"
                 disabled={deleteMutation.isPending}
+                className="w-full bg-red-600 hover:bg-red-700 text-white focus:ring-red-500"
               >
                 {deleteMutation.isPending ? (
                   <>
@@ -478,7 +714,7 @@ export default function CategoriesPage() {
                 ) : (
                   <>
                     <Trash2 className="ml-2 h-4 w-4" />
-                    نعم، حذف التصنيف
+                    تأكيد الحذف
                   </>
                 )}
               </AlertDialogAction>
