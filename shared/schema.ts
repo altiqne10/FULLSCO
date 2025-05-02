@@ -99,6 +99,13 @@ export const posts = pgTable("posts", {
   excerpt: text("excerpt"),
   authorId: integer("author_id").references(() => users.id).notNull(),
   status: text("status").notNull().default("draft"),
+  imageUrl: text("image_url"),
+  isFeatured: boolean("is_featured").default(false),
+  views: integer("views").default(0),
+  metaTitle: text("meta_title"),
+  metaDescription: text("meta_description"),
+  metaKeywords: text("meta_keywords"),
+  focusKeyword: text("focus_keyword"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
