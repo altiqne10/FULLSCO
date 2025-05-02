@@ -272,57 +272,57 @@ export default function CategoriesPage() {
     <AdminLayout title="إدارة التصنيفات" actions={actions}>
       <div className="space-y-8">
         {/* الإحصائيات وبطاقات المعلومات */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-6">
           <Card className="bg-gradient-to-br from-blue-50 to-white border-none shadow-md">
-            <CardHeader className="pb-2">
+            <CardHeader className="pb-1 px-3 sm:px-6 pt-3 sm:pt-6">
               <div className="flex justify-between items-start">
-                <div className="bg-blue-100 p-3 rounded-xl">
-                  <FolderOpen className="h-5 w-5 text-blue-600" />
+                <div className="bg-blue-100 p-2 sm:p-3 rounded-xl">
+                  <FolderOpen className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-1">
-                <h3 className="text-3xl font-bold text-gray-800">
+            <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+              <div className="space-y-0 sm:space-y-1">
+                <h3 className="text-xl sm:text-3xl font-bold text-gray-800">
                   {categories ? categories.length : 0}
                 </h3>
-                <p className="text-gray-500">إجمالي التصنيفات</p>
+                <p className="text-xs sm:text-sm text-gray-500">إجمالي التصنيفات</p>
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-br from-purple-50 to-white border-none shadow-md">
-            <CardHeader className="pb-2">
+            <CardHeader className="pb-1 px-3 sm:px-6 pt-3 sm:pt-6">
               <div className="flex justify-between items-start">
-                <div className="bg-purple-100 p-3 rounded-xl">
-                  <BookOpenCheck className="h-5 w-5 text-purple-600" />
+                <div className="bg-purple-100 p-2 sm:p-3 rounded-xl">
+                  <BookOpenCheck className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-1">
-                <h3 className="text-3xl font-bold text-gray-800">
+            <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+              <div className="space-y-0 sm:space-y-1">
+                <h3 className="text-xl sm:text-3xl font-bold text-gray-800">
                   {categories ? categories.filter(cat => cat.description && cat.description.length > 0).length : 0}
                 </h3>
-                <p className="text-gray-500">تصنيفات مع وصف</p>
+                <p className="text-xs sm:text-sm text-gray-500">تصنيفات مع وصف</p>
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-to-br from-amber-50 to-white border-none shadow-md">
-            <CardHeader className="pb-2">
+            <CardHeader className="pb-1 px-3 sm:px-6 pt-3 sm:pt-6">
               <div className="flex justify-between items-start">
-                <div className="bg-amber-100 p-3 rounded-xl">
-                  <Globe className="h-5 w-5 text-amber-600" />
+                <div className="bg-amber-100 p-2 sm:p-3 rounded-xl">
+                  <Globe className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-1">
-                <h3 className="text-3xl font-bold text-gray-800">
+            <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+              <div className="space-y-0 sm:space-y-1">
+                <h3 className="text-xl sm:text-3xl font-bold text-gray-800">
                   {categories ? categories.filter(cat => cat.slug && cat.slug.length > 5).length : 0}
                 </h3>
-                <p className="text-gray-500">تصنيفات SEO-friendly</p>
+                <p className="text-xs sm:text-sm text-gray-500">تصنيفات SEO-friendly</p>
               </div>
             </CardContent>
           </Card>
@@ -330,92 +330,105 @@ export default function CategoriesPage() {
         
         {/* نافذة إضافة تصنيف */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>إضافة تصنيف جديد</DialogTitle>
-              <DialogDescription>
+          <DialogContent className="w-[95%] max-w-[500px] rounded-xl p-0 overflow-hidden">
+            <DialogHeader className="bg-blue-50/50 px-4 py-3 border-b">
+              <DialogTitle className="flex items-center text-blue-700">
+                <PlusCircle className="ml-2 h-5 w-5 text-blue-500" />
+                إضافة تصنيف جديد
+              </DialogTitle>
+              <DialogDescription className="text-sm text-gray-600 mt-1">
                 أضف تصنيفًا جديدًا للمنح الدراسية هنا. اضغط على حفظ عند الانتهاء.
               </DialogDescription>
             </DialogHeader>
-            <Form {...addForm}>
-              <form onSubmit={addForm.handleSubmit(onSubmitAdd)} className="space-y-4">
-                <FormField
-                  control={addForm.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>اسم التصنيف</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field}
-                          onChange={handleNameChangeAdd} 
-                          placeholder="مثال: دراسات عليا"
-                          className="border border-gray-300 focus:border-blue-500"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={addForm.control}
-                  name="slug"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>الاسم المختصر (Slug)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          placeholder="مثال: graduate-studies" 
-                          dir="ltr"
-                          className="border border-gray-300 focus:border-blue-500 font-mono text-sm"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        سيستخدم هذا في عنوان URL. يجب أن يحتوي على أحرف صغيرة وأرقام وشرطات فقط.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={addForm.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>الوصف</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          {...field} 
-                          placeholder="وصف اختياري للتصنيف" 
-                          className="resize-none min-h-[100px] border border-gray-300 focus:border-blue-500"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <DialogFooter>
-                  <Button 
-                    type="submit" 
-                    disabled={addMutation.isPending} 
-                    className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
-                  >
-                    {addMutation.isPending ? (
-                      <>
-                        <RefreshCw className="ml-2 h-4 w-4 animate-spin" />
-                        جاري الحفظ...
-                      </>
-                    ) : (
-                      <>
-                        <Check className="ml-2 h-4 w-4" />
-                        حفظ
-                      </>
+            <div className="p-4">
+              <Form {...addForm}>
+                <form onSubmit={addForm.handleSubmit(onSubmitAdd)} className="space-y-4">
+                  <FormField
+                    control={addForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium text-gray-700">اسم التصنيف</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field}
+                            onChange={handleNameChangeAdd} 
+                            placeholder="مثال: دراسات عليا"
+                            className="border border-gray-300 focus:border-blue-500 text-sm"
+                          />
+                        </FormControl>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
                     )}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
+                  />
+                  <FormField
+                    control={addForm.control}
+                    name="slug"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium text-gray-700">الاسم المختصر (Slug)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            placeholder="مثال: graduate-studies" 
+                            dir="ltr"
+                            className="border border-gray-300 focus:border-blue-500 font-mono text-sm"
+                          />
+                        </FormControl>
+                        <FormDescription className="text-xs">
+                          سيستخدم هذا في عنوان URL. يجب أن يحتوي على أحرف صغيرة وأرقام وشرطات فقط.
+                        </FormDescription>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={addForm.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium text-gray-700">الوصف</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            {...field} 
+                            placeholder="وصف اختياري للتصنيف" 
+                            className="resize-none min-h-[80px] sm:min-h-[100px] border border-gray-300 focus:border-blue-500 text-sm"
+                          />
+                        </FormControl>
+                        <FormMessage className="text-xs" />
+                      </FormItem>
+                    )}
+                  />
+                  <DialogFooter className="mt-6 sm:mt-8 gap-3 flex flex-col sm:flex-row sm:justify-end">
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      className="w-full sm:w-auto border-gray-300"
+                      onClick={() => setIsAddDialogOpen(false)}
+                    >
+                      إلغاء
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      disabled={addMutation.isPending} 
+                      className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
+                    >
+                      {addMutation.isPending ? (
+                        <>
+                          <RefreshCw className="ml-2 h-4 w-4 animate-spin" />
+                          جاري الحفظ...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="ml-2 h-4 w-4" />
+                          حفظ التصنيف
+                        </>
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </div>
           </DialogContent>
         </Dialog>
 
@@ -431,20 +444,20 @@ export default function CategoriesPage() {
             </CardDescription>
             
             {/* شريط البحث والفلترة */}
-            <div className="flex flex-col md:flex-row gap-4 mt-4">
-              <div className="relative w-full md:w-[300px]">
+            <div className="flex flex-col md:flex-row gap-3 mt-4">
+              <div className="relative w-full md:w-[280px]">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input 
                   placeholder="البحث عن تصنيف..." 
-                  className="pl-3 pr-9 bg-gray-50 border-gray-200 focus:border-blue-500" 
+                  className="pl-3 pr-9 bg-gray-50 border-gray-200 focus:border-blue-500 h-9 text-sm" 
                 />
               </div>
-              <div className="space-x-2 rtl:space-x-reverse space-y-2 md:space-y-0">
-                <Button variant="outline" className="text-xs h-9">
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" className="text-xs px-2 h-9 flex-shrink-0">
                   <Filter className="ml-1 h-3 w-3" />
                   مع وصف
                 </Button>
-                <Button variant="outline" className="text-xs h-9">
+                <Button variant="outline" size="sm" className="text-xs px-2 h-9 flex-shrink-0">
                   <ArrowUpDown className="ml-1 h-3 w-3" />
                   ترتيب حسب الاسم
                 </Button>
@@ -475,80 +488,158 @@ export default function CategoriesPage() {
                 </Button>
               </div>
             ) : categories && categories.length > 0 ? (
-              <div className="rounded-md border overflow-hidden">
-                <Table>
-                  <TableHeader className="bg-gray-50">
-                    <TableRow>
-                      <TableHead className="w-12 text-right">الرقم</TableHead>
-                      <TableHead className="text-right">الاسم</TableHead>
-                      <TableHead className="text-right">الاسم المختصر</TableHead>
-                      <TableHead className="text-right">الوصف</TableHead>
-                      <TableHead className="text-left w-[100px]">الإجراءات</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {categories.map((category) => (
-                      <TableRow key={category.id} className="hover:bg-blue-50/30">
-                        <TableCell className="font-medium">{category.id}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
-                                {category.name.substring(0, 2)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium">{category.name}</p>
-                              <p className="text-xs text-gray-500">تصنيف #{category.id}</p>
+              <div className="rounded-md border overflow-x-auto">
+                {/* للأجهزة المكتبية والأجهزة اللوحية الكبيرة */}
+                <div className="hidden md:block">
+                  <Table>
+                    <TableHeader className="bg-gray-50">
+                      <TableRow>
+                        <TableHead className="w-12 text-right">الرقم</TableHead>
+                        <TableHead className="text-right">الاسم</TableHead>
+                        <TableHead className="text-right">الاسم المختصر</TableHead>
+                        <TableHead className="text-right">الوصف</TableHead>
+                        <TableHead className="text-left w-[100px]">الإجراءات</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {categories.map((category) => (
+                        <TableRow key={category.id} className="hover:bg-blue-50/30">
+                          <TableCell className="font-medium">{category.id}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-8 w-8">
+                                <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
+                                  {category.name.substring(0, 2)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{category.name}</p>
+                                <p className="text-xs text-gray-500">تصنيف #{category.id}</p>
+                              </div>
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200 font-mono text-xs" dir="ltr">
+                              {category.slug}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="max-w-[300px] truncate">
+                              {category.description ? 
+                                category.description 
+                                : 
+                                <span className="text-gray-400 text-sm italic">لا يوجد وصف</span>
+                              }
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                  <span className="sr-only">القائمة</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem onClick={() => handleEdit(category)}>
+                                  <Edit className="ml-2 h-4 w-4" />
+                                  تعديل التصنيف
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <Flag className="ml-2 h-4 w-4" />
+                                  عرض المنح المرتبطة
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => handleDelete(category)}
+                                  className="text-red-600 focus:bg-red-50 focus:text-red-600"
+                                >
+                                  <Trash2 className="ml-2 h-4 w-4" />
+                                  حذف التصنيف
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                
+                {/* للأجهزة المحمولة */}
+                <div className="md:hidden space-y-3 py-2">
+                  {categories.map((category) => (
+                    <div key={category.id} className="border rounded-lg overflow-hidden mb-3 bg-white">
+                      <div className="p-3 border-b bg-gray-50 flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
+                              {category.name.substring(0, 2)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium text-sm">{category.name}</p>
+                            <p className="text-xs text-gray-500">تصنيف #{category.id}</p>
                           </div>
-                        </TableCell>
-                        <TableCell>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">القائمة</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem onClick={() => handleEdit(category)}>
+                              <Edit className="ml-2 h-4 w-4" />
+                              تعديل التصنيف
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Flag className="ml-2 h-4 w-4" />
+                              عرض المنح المرتبطة
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={() => handleDelete(category)}
+                              className="text-red-600 focus:bg-red-50 focus:text-red-600"
+                            >
+                              <Trash2 className="ml-2 h-4 w-4" />
+                              حذف التصنيف
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      <div className="p-3 space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">الاسم المختصر:</span>
                           <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200 font-mono text-xs" dir="ltr">
                             {category.slug}
                           </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="max-w-[300px] truncate">
+                        </div>
+                        <div>
+                          <span className="text-gray-500 block mb-1">الوصف:</span>
+                          <div className="text-sm text-gray-700">
                             {category.description ? 
                               category.description 
                               : 
                               <span className="text-gray-400 text-sm italic">لا يوجد وصف</span>
                             }
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">القائمة</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48">
-                              <DropdownMenuItem onClick={() => handleEdit(category)}>
-                                <Edit className="ml-2 h-4 w-4" />
-                                تعديل التصنيف
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Flag className="ml-2 h-4 w-4" />
-                                عرض المنح المرتبطة
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                onClick={() => handleDelete(category)}
-                                className="text-red-600 focus:bg-red-50 focus:text-red-600"
-                              >
-                                <Trash2 className="ml-2 h-4 w-4" />
-                                حذف التصنيف
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                        </div>
+                        <div className="pt-2 flex gap-2 border-t mt-2">
+                          <Button size="sm" variant="outline" className="text-xs h-8 flex-1" onClick={() => handleEdit(category)}>
+                            <Edit className="ml-1 h-3.5 w-3.5" />
+                            تعديل
+                          </Button>
+                          <Button size="sm" variant="outline" className="text-xs h-8 flex-1 text-red-600 border-red-200" onClick={() => handleDelete(category)}>
+                            <Trash2 className="ml-1 h-3.5 w-3.5" />
+                            حذف
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : (
               <div className="text-center py-12 px-6 bg-gray-50 rounded-lg border border-dashed border-gray-200">
@@ -570,155 +661,179 @@ export default function CategoriesPage() {
         
         {/* نافذة تعديل التصنيف */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle className="flex items-center">
+          <DialogContent className="w-[95%] max-w-[500px] rounded-xl p-0 overflow-hidden">
+            <DialogHeader className="bg-blue-50/50 px-4 py-3 border-b">
+              <DialogTitle className="flex items-center text-blue-700">
                 <Edit className="ml-2 h-5 w-5 text-blue-500" />
                 تعديل التصنيف
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-sm text-gray-600 mt-1">
                 قم بتعديل بيانات التصنيف هنا. اضغط على حفظ عند الانتهاء.
               </DialogDescription>
             </DialogHeader>
             {selectedCategory && (
-              <Form {...editForm}>
-                <form onSubmit={editForm.handleSubmit(onSubmitEdit)} className="space-y-4">
-                  <FormField
-                    control={editForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>اسم التصنيف</FormLabel>
-                        <FormControl>
-                          <Input 
-                            {...field} 
-                            onChange={handleNameChangeEdit} 
-                            placeholder="مثال: دراسات عليا"
-                            className="border border-gray-300 focus:border-blue-500" 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={editForm.control}
-                    name="slug"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>الاسم المختصر (Slug)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            {...field} 
-                            placeholder="مثال: graduate-studies" 
-                            dir="ltr"
-                            className="border border-gray-300 focus:border-blue-500 font-mono text-sm" 
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          سيستخدم هذا في عنوان URL. يجب أن يحتوي على أحرف صغيرة وأرقام وشرطات فقط.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={editForm.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>الوصف</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            {...field} 
-                            placeholder="وصف اختياري للتصنيف"
-                            className="resize-none min-h-[100px] border border-gray-300 focus:border-blue-500" 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <DialogFooter>
-                    <Button 
-                      type="submit" 
-                      disabled={updateMutation.isPending} 
-                      className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
-                    >
-                      {updateMutation.isPending ? (
-                        <>
-                          <RefreshCw className="ml-2 h-4 w-4 animate-spin" />
-                          جاري الحفظ...
-                        </>
-                      ) : (
-                        <>
-                          <Check className="ml-2 h-4 w-4" />
-                          حفظ التغييرات
-                        </>
+              <div className="p-4">
+                <Form {...editForm}>
+                  <form onSubmit={editForm.handleSubmit(onSubmitEdit)} className="space-y-4">
+                    <FormField
+                      control={editForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium text-gray-700">اسم التصنيف</FormLabel>
+                          <FormControl>
+                            <Input 
+                              {...field} 
+                              onChange={handleNameChangeEdit} 
+                              placeholder="مثال: دراسات عليا"
+                              className="border border-gray-300 focus:border-blue-500 text-sm" 
+                            />
+                          </FormControl>
+                          <FormMessage className="text-xs" />
+                        </FormItem>
                       )}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
+                    />
+                    <FormField
+                      control={editForm.control}
+                      name="slug"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium text-gray-700">الاسم المختصر (Slug)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              {...field} 
+                              placeholder="مثال: graduate-studies" 
+                              dir="ltr"
+                              className="border border-gray-300 focus:border-blue-500 font-mono text-sm" 
+                            />
+                          </FormControl>
+                          <FormDescription className="text-xs">
+                            سيستخدم هذا في عنوان URL. يجب أن يحتوي على أحرف صغيرة وأرقام وشرطات فقط.
+                          </FormDescription>
+                          <FormMessage className="text-xs" />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={editForm.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium text-gray-700">الوصف</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              {...field} 
+                              placeholder="وصف اختياري للتصنيف"
+                              className="resize-none min-h-[80px] sm:min-h-[100px] border border-gray-300 focus:border-blue-500 text-sm" 
+                            />
+                          </FormControl>
+                          <FormMessage className="text-xs" />
+                        </FormItem>
+                      )}
+                    />
+                    <DialogFooter className="mt-6 sm:mt-8 gap-3 flex flex-col sm:flex-row sm:justify-end">
+                      <Button 
+                        type="button" 
+                        variant="outline"
+                        className="w-full sm:w-auto border-gray-300"
+                        onClick={() => setIsEditDialogOpen(false)}
+                      >
+                        إلغاء
+                      </Button>
+                      <Button 
+                        type="submit" 
+                        disabled={updateMutation.isPending} 
+                        className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600"
+                      >
+                        {updateMutation.isPending ? (
+                          <>
+                            <RefreshCw className="ml-2 h-4 w-4 animate-spin" />
+                            جاري الحفظ...
+                          </>
+                        ) : (
+                          <>
+                            <Check className="ml-2 h-4 w-4" />
+                            حفظ التغييرات
+                          </>
+                        )}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </Form>
+              </div>
             )}
           </DialogContent>
         </Dialog>
         
         {/* نافذة حذف التصنيف */}
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <AlertDialogContent className="max-w-[450px]">
-            <AlertDialogHeader>
-              <AlertDialogTitle className="text-lg text-red-600 font-bold flex items-center">
-                <Trash2 className="ml-2 h-5 w-5" />
-                تأكيد حذف التصنيف
-              </AlertDialogTitle>
-              <AlertDialogDescription className="space-y-4">
-                <p>هل أنت متأكد من رغبتك في حذف هذا التصنيف؟ هذا الإجراء لا يمكن التراجع عنه.</p>
-                
-                {selectedCategory && (
-                  <div className="mt-4 p-4 bg-gray-50 rounded-md border border-gray-200">
-                    <div className="flex items-center mb-2">
-                      <div className="ml-3 bg-blue-100 text-blue-700 p-2 rounded-full">
-                        <FolderOpen className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">{selectedCategory.name}</h4>
-                        <p className="text-sm text-gray-500 dir-ltr">{selectedCategory.slug}</p>
-                      </div>
+          <AlertDialogContent className="w-[95%] max-w-[450px] rounded-xl p-0 overflow-hidden">
+            <div className="bg-red-50 px-4 py-3 border-b border-red-100">
+              <AlertDialogHeader className="p-0 space-y-1">
+                <AlertDialogTitle className="text-base text-red-700 font-bold flex items-center">
+                  <Trash2 className="ml-2 h-5 w-5 text-red-600" />
+                  تأكيد حذف التصنيف
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-sm text-red-600">
+                  هل أنت متأكد من رغبتك في حذف هذا التصنيف؟ هذا الإجراء لا يمكن التراجع عنه.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+            </div>
+            
+            <div className="p-4">
+              {selectedCategory && (
+                <div className="mb-4 p-3 bg-gray-50 rounded-md border border-gray-200">
+                  <div className="flex items-center mb-2">
+                    <div className="ml-3 bg-blue-100 text-blue-700 p-2 rounded-full">
+                      <FolderOpen className="h-5 w-5" />
                     </div>
-                    {selectedCategory.description && (
-                      <p className="text-sm text-gray-600 mt-2 border-t border-gray-200 pt-2">
-                        {selectedCategory.description}
-                      </p>
-                    )}
+                    <div>
+                      <h4 className="font-medium text-sm">{selectedCategory.name}</h4>
+                      <p className="text-xs text-gray-500" dir="ltr">{selectedCategory.slug}</p>
+                    </div>
                   </div>
-                )}
-                
-                <p className="mt-2 text-sm">
+                  {selectedCategory.description && (
+                    <p className="text-xs text-gray-600 mt-2 border-t border-gray-200 pt-2">
+                      {selectedCategory.description}
+                    </p>
+                  )}
+                </div>
+              )}
+              
+              <div className="rounded-md border border-red-100 bg-red-50 p-2 flex items-start">
+                <div className="mt-0.5 ml-2 text-red-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                </div>
+                <p className="text-xs text-red-700">
                   ملاحظة: حذف هذا التصنيف قد يؤثر على المنح الدراسية المرتبطة به.
                 </p>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="gap-2">
-              <AlertDialogCancel className="w-full">إلغاء</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={confirmDelete}
-                disabled={deleteMutation.isPending}
-                className="w-full bg-red-600 hover:bg-red-700 text-white focus:ring-red-500"
-              >
-                {deleteMutation.isPending ? (
-                  <>
-                    <RefreshCw className="ml-2 h-4 w-4 animate-spin" />
-                    جاري الحذف...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="ml-2 h-4 w-4" />
-                    تأكيد الحذف
-                  </>
-                )}
-              </AlertDialogAction>
-            </AlertDialogFooter>
+              </div>
+              
+              <AlertDialogFooter className="mt-5 flex-col sm:flex-row gap-2">
+                <AlertDialogCancel className="w-full sm:w-1/2 text-sm h-9">إلغاء</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={confirmDelete}
+                  disabled={deleteMutation.isPending}
+                  className="w-full sm:w-1/2 h-9 text-sm bg-red-600 hover:bg-red-700 text-white focus:ring-red-500"
+                >
+                  {deleteMutation.isPending ? (
+                    <>
+                      <RefreshCw className="ml-2 h-4 w-4 animate-spin" />
+                      جاري الحذف...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="ml-2 h-4 w-4" />
+                      تأكيد الحذف
+                    </>
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </div>
           </AlertDialogContent>
         </AlertDialog>
       </div>
