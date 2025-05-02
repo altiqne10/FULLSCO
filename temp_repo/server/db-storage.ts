@@ -27,12 +27,10 @@ export class DatabaseStorage implements IStorage {
       WHERE id = ${id}
     `);
     
-    // @ts-ignore - PostgreSQL driver returns rows as an array
-    if (result.rows && result.rows.length === 0) return undefined;
+    if (result.length === 0) return undefined;
     
     // Convert the first row to User type
-    // @ts-ignore - PostgreSQL driver returns rows as an array
-    return result.rows[0] as User;
+    return result[0] as User;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
@@ -43,12 +41,10 @@ export class DatabaseStorage implements IStorage {
       WHERE username = ${username}
     `);
     
-    // @ts-ignore - PostgreSQL driver returns rows as an array
-    if (result.rows && result.rows.length === 0) return undefined;
+    if (result.length === 0) return undefined;
     
     // Convert the first row to User type
-    // @ts-ignore - PostgreSQL driver returns rows as an array
-    return result.rows[0] as User;
+    return result[0] as User;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
@@ -59,11 +55,9 @@ export class DatabaseStorage implements IStorage {
       WHERE email = ${email}
     `);
     
-    // @ts-ignore - PostgreSQL driver returns rows as an array
-    if (result.rows && result.rows.length === 0) return undefined;
+    if (result.rows.length === 0) return undefined;
     
     // Convert the first row to User type
-    // @ts-ignore - PostgreSQL driver returns rows as an array
     return result.rows[0] as User;
   }
 
@@ -430,12 +424,10 @@ export class DatabaseStorage implements IStorage {
   async getSiteSettings(): Promise<SiteSetting | undefined> {
     // Use raw query to get the site settings, since schema and actual table structure might differ
     const result = await db.execute(sql`SELECT * FROM site_settings LIMIT 1`);
-    // @ts-ignore - PostgreSQL driver returns rows as an array
-    if (result.rows && result.rows.length === 0) return undefined;
+    if (result.length === 0) return undefined;
     
     // Map DB fields to our schema
-    // @ts-ignore - PostgreSQL driver returns rows as an array
-    const dbSettings = result.rows[0];
+    const dbSettings = result[0];
     
     // Create a settings object with required fields from the schema
     // Adding null/default values for missing columns

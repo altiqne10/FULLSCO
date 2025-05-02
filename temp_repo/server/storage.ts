@@ -15,7 +15,6 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, count } from "drizzle-orm";
-import { DatabaseStorage } from "./db-storage";
 
 // Storage interface
 export interface IStorage {
