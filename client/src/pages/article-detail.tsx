@@ -151,9 +151,7 @@ const ArticleDetail = () => {
         <Card className="mb-8">
           <CardContent className="p-6 sm:p-8">
             <div className="prose max-w-none">
-              {post.content.split('\n').map((paragraph, index) => (
-                <p key={index} className="mb-4">{paragraph}</p>
-              ))}
+              <div className="article-content" dangerouslySetInnerHTML={{ __html: post.content }}></div>
             </div>
             
             {/* Share and save buttons */}
@@ -197,7 +195,7 @@ const ArticleDetail = () => {
                     <CardContent className="p-4">
                       <h3 className="text-lg font-bold text-gray-900 hover:text-primary mb-2">
                         <Link href={`/articles/${relatedPost.slug}`}>
-                          <a>{relatedPost.title}</a>
+                          {relatedPost.title}
                         </Link>
                       </h3>
                       <div className="flex items-center text-sm text-gray-600">

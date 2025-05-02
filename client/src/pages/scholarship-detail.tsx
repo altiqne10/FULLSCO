@@ -214,6 +214,12 @@ const ScholarshipDetail = () => {
                 <div className="prose max-w-none">
                   <p className="mb-6 text-gray-800 leading-relaxed">{scholarship.description}</p>
                   
+                  {scholarship.content && (
+                    <div className="scholarship-content mb-6">
+                      <div className="text-gray-800 leading-relaxed" dangerouslySetInnerHTML={{ __html: scholarship.content }}></div>
+                    </div>
+                  )}
+                  
                   {scholarship.requirements && (
                     <div className="bg-primary/5 rounded-lg p-6 border-r-4 border-primary my-6">
                       <h3 className="text-xl font-bold mb-3 text-primary">متطلبات المنحة</h3>
