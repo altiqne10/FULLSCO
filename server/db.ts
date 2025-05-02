@@ -11,9 +11,5 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Use the DATABASE_URL from environment variables (which contains the connection string for Neon DB)
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle(pool, { schema });
-
-// Initialize the database connection
-console.log("Database connection initialized");
+export const db = drizzle({ client: pool, schema });

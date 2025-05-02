@@ -2,426 +2,915 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { 
-  insertPostSchema, 
-  updatePostSchema, 
-  insertCategorySchema, 
-  insertCommentSchema 
+  insertUserSchema, 
+  insertScholarshipSchema,
+  insertPostSchema,
+  insertCategorySchema,
+  insertLevelSchema,
+  insertCountrySchema,
+  insertTagSchema,
+  insertSuccessStorySchema,
+  insertSubscriberSchema,
+  insertSeoSettingsSchema,
+  insertSiteSettingsSchema,
+  insertPageSchema,
+  User
 } from "@shared/schema";
-import { z } from "zod";
-
-// Helper function to generate slugs
-function generateSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^\w\s]/gi, '')
-    .replace(/\s+/g, '-');
-}
+import session from "express-session";
+import passport from "passport";
+import { Strategy as LocalStrategy } from "passport-local";
+import MemoryStore from "memorystore";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Categories endpoints
-  app.get("/api/categories", async (req: Request, res: Response) => {
-    try {
-      const categories = await storage.getAllCategories();
-      res.json(categories);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-      res.status(500).json({ message: "Failed to fetch categories" });
-    }
-  });
+  // Set up authentication
+  const MemorySessionStore = MemoryStore(session);
+  
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET || "fullsco-secret-key",
+      resave: false,
+      saveUninitialized: false,
+      cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }, // 24 hours
+      store: new MemorySessionStore({
+        checkPeriod: 86400000, // prune expired entries every 24h
+      }),
+    })
+  );
+  
+  app.use(passport.initialize());
+  app.use(passport.session());
 
-  app.post("/api/categories", async (req: Request, res: Response) => {
-    try {
-      const validation = insertCategorySchema.safeParse(req.body);
-      
-      if (!validation.success) {
-        return res.status(400).json({ message: "Invalid category data", errors: validation.error.format() });
-      }
-      
-      const { name } = validation.data;
-      const slug = generateSlug(name);
-      
-      const existingCategory = await storage.getCategoryBySlug(slug);
-      if (existingCategory) {
-        return res.status(400).json({ message: "A category with this name already exists" });
-      }
-      
-      const newCategory = await storage.createCategory({ ...validation.data, slug });
-      res.status(201).json(newCategory);
-    } catch (error) {
-      console.error("Error creating category:", error);
-      res.status(500).json({ message: "Failed to create category" });
-    }
-  });
-
-  app.put("/api/categories/:id", async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid category ID" });
-      }
-      
-      const validation = insertCategorySchema.partial().safeParse(req.body);
-      
-      if (!validation.success) {
-        return res.status(400).json({ message: "Invalid category data", errors: validation.error.format() });
-      }
-      
-      const data = validation.data;
-      
-      // If name is provided, update the slug
-      if (data.name) {
-        data.slug = generateSlug(data.name);
-        
-        // Check if slug already exists
-        const existingCategory = await storage.getCategoryBySlug(data.slug);
-        if (existingCategory && existingCategory.id !== id) {
-          return res.status(400).json({ message: "A category with this name already exists" });
-        }
-      }
-      
-      const updatedCategory = await storage.updateCategory(id, data);
-      
-      if (!updatedCategory) {
-        return res.status(404).json({ message: "Category not found" });
-      }
-      
-      res.json(updatedCategory);
-    } catch (error) {
-      console.error("Error updating category:", error);
-      res.status(500).json({ message: "Failed to update category" });
-    }
-  });
-
-  app.delete("/api/categories/:id", async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid category ID" });
-      }
-      
-      const deleted = await storage.deleteCategory(id);
-      
-      if (!deleted) {
-        return res.status(404).json({ message: "Category not found" });
-      }
-      
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting category:", error);
-      res.status(500).json({ message: "Failed to delete category" });
-    }
-  });
-
-  // Posts endpoints
-  app.get("/api/posts", async (req: Request, res: Response) => {
-    try {
-      const filter: {
-        categoryId?: number;
-        search?: string;
-        status?: string;
-      } = {};
-      
-      if (req.query.categoryId) {
-        filter.categoryId = parseInt(req.query.categoryId as string);
-      }
-      
-      if (req.query.search) {
-        filter.search = req.query.search as string;
-      }
-      
-      if (req.query.status) {
-        filter.status = req.query.status as string;
-      }
-      
-      const posts = await storage.getAllPosts(filter);
-      
-      // For each post, get the category
-      const postsWithCategories = await Promise.all(posts.map(async (post) => {
-        let category = null;
-        if (post.categoryId) {
-          category = await storage.getCategoryById(post.categoryId);
+  // Configure passport local strategy
+  passport.use(
+    new LocalStrategy(async (username, password, done) => {
+      try {
+        const user = await storage.getUserByUsername(username);
+        if (!user) {
+          return done(null, false, { message: "Incorrect username" });
         }
         
-        const author = await storage.getUser(post.userId);
+        if (user.password !== password) {
+          return done(null, false, { message: "Incorrect password" });
+        }
         
-        return {
-          ...post,
-          category,
-          author
-        };
-      }));
-      
-      res.json(postsWithCategories);
-    } catch (error) {
-      console.error("Error fetching posts:", error);
-      res.status(500).json({ message: "Failed to fetch posts" });
+        return done(null, user);
+      } catch (err) {
+        return done(err);
+      }
+    })
+  );
+
+  passport.serializeUser((user: any, done) => {
+    done(null, user.id);
+  });
+
+  passport.deserializeUser(async (id: number, done) => {
+    try {
+      const user = await storage.getUser(id);
+      done(null, user);
+    } catch (err) {
+      done(err);
     }
   });
 
-  app.get("/api/posts/:id", async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid post ID" });
+  // Auth middleware
+  const isAuthenticated = (req: Request, res: Response, next: Function) => {
+    if (req.isAuthenticated()) {
+      return next();
+    }
+    res.status(401).json({ message: "Unauthorized" });
+  };
+
+  const isAdmin = (req: Request, res: Response, next: Function) => {
+    if (req.isAuthenticated() && req.user && (req.user as any).role === "admin") {
+      return next();
+    }
+    res.status(403).json({ message: "Forbidden: Admin access required" });
+  };
+
+  // Authentication routes
+  app.post("/api/auth/login", (req, res, next) => {
+    passport.authenticate("local", (err: any, user: any, info: any) => {
+      if (err) {
+        return next(err);
       }
-      
-      const post = await storage.getPostById(id);
-      
+      if (!user) {
+        return res.status(401).json({ message: info.message });
+      }
+      req.login(user, (err) => {
+        if (err) {
+          return next(err);
+        }
+        
+        // Remove password from response
+        const userResponse = { ...user };
+        delete userResponse.password;
+        
+        return res.json(userResponse);
+      });
+    })(req, res, next);
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Error logging out" });
+      }
+      res.json({ message: "Logged out successfully" });
+    });
+  });
+
+  app.get("/api/auth/me", (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    // Remove password from response
+    const userResponse = { ...req.user as any };
+    delete userResponse.password;
+    
+    res.json(userResponse);
+  });
+
+  // User routes
+  app.post("/api/users", isAdmin, async (req, res) => {
+    try {
+      const data = insertUserSchema.parse(req.body);
+      const user = await storage.createUser(data);
+      res.status(201).json(user);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.get("/api/users", isAdmin, async (req, res) => {
+    const users = await storage.listUsers();
+    // Remove passwords from response
+    const safeUsers = users.map(user => {
+      const userCopy = { ...user };
+      delete userCopy.password;
+      return userCopy;
+    });
+    res.json(safeUsers);
+  });
+
+  // Category routes
+  app.post("/api/categories", isAdmin, async (req, res) => {
+    try {
+      const data = insertCategorySchema.parse(req.body);
+      const category = await storage.createCategory(data);
+      res.status(201).json(category);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.get("/api/categories", async (req, res) => {
+    const categories = await storage.listCategories();
+    res.json(categories);
+  });
+
+  app.get("/api/categories/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid category ID" });
+    }
+    const category = await storage.getCategory(id);
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+    res.json(category);
+  });
+
+  app.put("/api/categories/:id", isAdmin, async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid category ID" });
+    }
+    try {
+      const data = insertCategorySchema.partial().parse(req.body);
+      const category = await storage.updateCategory(id, data);
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      res.json(category);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.delete("/api/categories/:id", isAdmin, async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid category ID" });
+    }
+    const success = await storage.deleteCategory(id);
+    if (!success) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+    res.json({ message: "Category deleted successfully" });
+  });
+
+  // Level routes
+  app.post("/api/levels", isAdmin, async (req, res) => {
+    try {
+      const data = insertLevelSchema.parse(req.body);
+      const level = await storage.createLevel(data);
+      res.status(201).json(level);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.get("/api/levels", async (req, res) => {
+    const levels = await storage.listLevels();
+    res.json(levels);
+  });
+
+  // Country routes
+  app.post("/api/countries", isAdmin, async (req, res) => {
+    try {
+      const data = insertCountrySchema.parse(req.body);
+      const country = await storage.createCountry(data);
+      res.status(201).json(country);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.get("/api/countries", async (req, res) => {
+    const countries = await storage.listCountries();
+    res.json(countries);
+  });
+
+  // Scholarship routes
+  app.post("/api/scholarships", isAdmin, async (req, res) => {
+    try {
+      const data = insertScholarshipSchema.parse(req.body);
+      const scholarship = await storage.createScholarship(data);
+      res.status(201).json(scholarship);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.get("/api/scholarships", async (req, res) => {
+    const { featured, country, level, category } = req.query;
+    const filters: any = {};
+    
+    if (featured !== undefined) {
+      filters.isFeatured = featured === "true";
+    }
+    
+    if (country) {
+      const countryId = parseInt(country as string);
+      if (!isNaN(countryId)) {
+        filters.countryId = countryId;
+      }
+    }
+    
+    if (level) {
+      const levelId = parseInt(level as string);
+      if (!isNaN(levelId)) {
+        filters.levelId = levelId;
+      }
+    }
+    
+    if (category) {
+      const categoryId = parseInt(category as string);
+      if (!isNaN(categoryId)) {
+        filters.categoryId = categoryId;
+      }
+    }
+    
+    const scholarships = await storage.listScholarships(Object.keys(filters).length > 0 ? filters : undefined);
+    res.json(scholarships);
+  });
+
+  app.get("/api/scholarships/featured", async (req, res) => {
+    const scholarships = await storage.listScholarships({ isFeatured: true });
+    res.json(scholarships);
+  });
+
+  app.get("/api/scholarships/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid scholarship ID" });
+    }
+    const scholarship = await storage.getScholarship(id);
+    if (!scholarship) {
+      return res.status(404).json({ message: "Scholarship not found" });
+    }
+    res.json(scholarship);
+  });
+
+  app.get("/api/scholarships/slug/:slug", async (req, res) => {
+    const slug = req.params.slug;
+    const scholarship = await storage.getScholarshipBySlug(slug);
+    if (!scholarship) {
+      return res.status(404).json({ message: "Scholarship not found" });
+    }
+    res.json(scholarship);
+  });
+
+  app.put("/api/scholarships/:id", isAdmin, async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid scholarship ID" });
+    }
+    try {
+      const data = insertScholarshipSchema.partial().parse(req.body);
+      const scholarship = await storage.updateScholarship(id, data);
+      if (!scholarship) {
+        return res.status(404).json({ message: "Scholarship not found" });
+      }
+      res.json(scholarship);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.delete("/api/scholarships/:id", isAdmin, async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid scholarship ID" });
+    }
+    const success = await storage.deleteScholarship(id);
+    if (!success) {
+      return res.status(404).json({ message: "Scholarship not found" });
+    }
+    res.json({ message: "Scholarship deleted successfully" });
+  });
+
+  // Post (article) routes
+  app.post("/api/posts", isAdmin, async (req, res) => {
+    try {
+      const data = insertPostSchema.parse(req.body);
+      const post = await storage.createPost(data);
+      res.status(201).json(post);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.get("/api/posts", async (req, res) => {
+    const { featured, author } = req.query;
+    const filters: any = {};
+    
+    if (featured !== undefined) {
+      filters.isFeatured = featured === "true";
+    }
+    
+    if (author) {
+      const authorId = parseInt(author as string);
+      if (!isNaN(authorId)) {
+        filters.authorId = authorId;
+      }
+    }
+    
+    const posts = await storage.listPosts(Object.keys(filters).length > 0 ? filters : undefined);
+    res.json(posts);
+  });
+
+  app.get("/api/posts/featured", async (req, res) => {
+    const posts = await storage.listPosts({ isFeatured: true });
+    res.json(posts);
+  });
+
+  app.get("/api/posts/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid post ID" });
+    }
+    const post = await storage.getPost(id);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+    
+    // Increment view count
+    await storage.incrementPostViews(id);
+    
+    // Get updated post with incremented view count
+    const updatedPost = await storage.getPost(id);
+    res.json(updatedPost);
+  });
+
+  app.get("/api/posts/slug/:slug", async (req, res) => {
+    const slug = req.params.slug;
+    const post = await storage.getPostBySlug(slug);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+    
+    // Increment view count
+    await storage.incrementPostViews(post.id);
+    
+    // Get updated post with incremented view count
+    const updatedPost = await storage.getPost(post.id);
+    res.json(updatedPost);
+  });
+
+  app.put("/api/posts/:id", isAdmin, async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid post ID" });
+    }
+    try {
+      const data = insertPostSchema.partial().parse(req.body);
+      const post = await storage.updatePost(id, data);
       if (!post) {
         return res.status(404).json({ message: "Post not found" });
       }
+      res.json(post);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.delete("/api/posts/:id", isAdmin, async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid post ID" });
+    }
+    const success = await storage.deletePost(id);
+    if (!success) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+    res.json({ message: "Post deleted successfully" });
+  });
+
+  // Tag routes
+  app.post("/api/tags", isAdmin, async (req, res) => {
+    try {
+      const data = insertTagSchema.parse(req.body);
+      const tag = await storage.createTag(data);
+      res.status(201).json(tag);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.get("/api/tags", async (req, res) => {
+    const tags = await storage.listTags();
+    res.json(tags);
+  });
+
+  // Post-Tag relationship routes
+  app.post("/api/posts/:postId/tags/:tagId", isAdmin, async (req, res) => {
+    const postId = parseInt(req.params.postId);
+    const tagId = parseInt(req.params.tagId);
+    
+    if (isNaN(postId) || isNaN(tagId)) {
+      return res.status(400).json({ message: "Invalid post ID or tag ID" });
+    }
+    
+    const post = await storage.getPost(postId);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+    
+    const tag = await storage.getTag(tagId);
+    if (!tag) {
+      return res.status(404).json({ message: "Tag not found" });
+    }
+    
+    const postTag = await storage.addTagToPost(postId, tagId);
+    res.status(201).json(postTag);
+  });
+
+  app.get("/api/posts/:postId/tags", async (req, res) => {
+    const postId = parseInt(req.params.postId);
+    if (isNaN(postId)) {
+      return res.status(400).json({ message: "Invalid post ID" });
+    }
+    
+    const post = await storage.getPost(postId);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+    
+    const tags = await storage.getPostTags(postId);
+    res.json(tags);
+  });
+
+  app.delete("/api/posts/:postId/tags/:tagId", isAdmin, async (req, res) => {
+    const postId = parseInt(req.params.postId);
+    const tagId = parseInt(req.params.tagId);
+    
+    if (isNaN(postId) || isNaN(tagId)) {
+      return res.status(400).json({ message: "Invalid post ID or tag ID" });
+    }
+    
+    const success = await storage.removeTagFromPost(postId, tagId);
+    if (!success) {
+      return res.status(404).json({ message: "Post-tag relationship not found" });
+    }
+    
+    res.json({ message: "Tag removed from post successfully" });
+  });
+
+  // Success Story routes
+  app.post("/api/success-stories", isAdmin, async (req, res) => {
+    try {
+      const data = insertSuccessStorySchema.parse(req.body);
+      const story = await storage.createSuccessStory(data);
+      res.status(201).json(story);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.get("/api/success-stories", async (req, res) => {
+    const stories = await storage.listSuccessStories();
+    res.json(stories);
+  });
+
+  app.get("/api/success-stories/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid success story ID" });
+    }
+    const story = await storage.getSuccessStory(id);
+    if (!story) {
+      return res.status(404).json({ message: "Success story not found" });
+    }
+    res.json(story);
+  });
+
+  app.get("/api/success-stories/slug/:slug", async (req, res) => {
+    const slug = req.params.slug;
+    const story = await storage.getSuccessStoryBySlug(slug);
+    if (!story) {
+      return res.status(404).json({ message: "Success story not found" });
+    }
+    res.json(story);
+  });
+
+  app.put("/api/success-stories/:id", isAdmin, async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid success story ID" });
+    }
+    try {
+      const data = insertSuccessStorySchema.partial().parse(req.body);
+      const story = await storage.updateSuccessStory(id, data);
+      if (!story) {
+        return res.status(404).json({ message: "Success story not found" });
+      }
+      res.json(story);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.delete("/api/success-stories/:id", isAdmin, async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid success story ID" });
+    }
+    const success = await storage.deleteSuccessStory(id);
+    if (!success) {
+      return res.status(404).json({ message: "Success story not found" });
+    }
+    res.json({ message: "Success story deleted successfully" });
+  });
+
+  // Newsletter subscriber routes
+  app.post("/api/subscribers", async (req, res) => {
+    try {
+      const data = insertSubscriberSchema.parse(req.body);
       
-      let category = null;
-      if (post.categoryId) {
-        category = await storage.getCategoryById(post.categoryId);
+      // Check if subscriber already exists
+      const existingSubscriber = await storage.getSubscriberByEmail(data.email);
+      if (existingSubscriber) {
+        return res.status(409).json({ message: "Email already subscribed" });
       }
       
-      const author = await storage.getUser(post.userId);
+      const subscriber = await storage.createSubscriber(data);
+      res.status(201).json(subscriber);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.get("/api/subscribers", isAdmin, async (req, res) => {
+    const subscribers = await storage.listSubscribers();
+    res.json(subscribers);
+  });
+
+  // SEO settings routes
+  app.post("/api/seo-settings", isAdmin, async (req, res) => {
+    try {
+      const data = insertSeoSettingsSchema.parse(req.body);
       
-      res.json({
-        ...post,
-        category,
-        author
+      // Check if setting for this path already exists
+      const existingSetting = await storage.getSeoSettingByPath(data.pagePath);
+      if (existingSetting) {
+        // Update instead of create
+        const updated = await storage.updateSeoSetting(existingSetting.id, data);
+        return res.json(updated);
+      }
+      
+      const seoSetting = await storage.createSeoSetting(data);
+      res.status(201).json(seoSetting);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.get("/api/seo-settings", isAdmin, async (req, res) => {
+    const settings = await storage.listSeoSettings();
+    res.json(settings);
+  });
+
+  app.get("/api/seo-settings/path", async (req, res) => {
+    const path = req.query.path as string;
+    if (!path) {
+      return res.status(400).json({ message: "Path parameter is required" });
+    }
+    
+    const setting = await storage.getSeoSettingByPath(path);
+    if (!setting) {
+      return res.json({ 
+        pagePath: path,
+        metaTitle: "FULLSCO - Scholarship Blog",
+        metaDescription: "Find and apply for scholarships worldwide with FULLSCO."
       });
+    }
+    
+    res.json(setting);
+  });
+
+  app.put("/api/seo-settings/:id", isAdmin, async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid SEO setting ID" });
+    }
+    try {
+      const data = insertSeoSettingsSchema.partial().parse(req.body);
+      const setting = await storage.updateSeoSetting(id, data);
+      if (!setting) {
+        return res.status(404).json({ message: "SEO setting not found" });
+      }
+      res.json(setting);
     } catch (error) {
-      console.error("Error fetching post:", error);
-      res.status(500).json({ message: "Failed to fetch post" });
+      res.status(400).json({ message: (error as Error).message });
     }
   });
 
-  app.post("/api/posts", async (req: Request, res: Response) => {
-    try {
-      // Hard-code user ID for now (in a real app, this would come from the authenticated user)
-      const userId = 1;
-      
-      const validation = insertPostSchema
-        .omit({ userId: true, slug: true })
-        .safeParse(req.body);
-      
-      if (!validation.success) {
-        return res.status(400).json({ message: "Invalid post data", errors: validation.error.format() });
-      }
-      
-      const { title } = validation.data;
-      const slug = generateSlug(title);
-      
-      const existingPost = await storage.getPostBySlug(slug);
-      if (existingPost) {
-        return res.status(400).json({ message: "A post with this title already exists" });
-      }
-      
-      const newPost = await storage.createPost({
-        ...validation.data,
-        userId,
-        slug
-      });
-      
-      let category = null;
-      if (newPost.categoryId) {
-        category = await storage.getCategoryById(newPost.categoryId);
-      }
-      
-      const author = await storage.getUser(newPost.userId);
-      
-      res.status(201).json({
-        ...newPost,
-        category,
-        author
-      });
-    } catch (error) {
-      console.error("Error creating post:", error);
-      res.status(500).json({ message: "Failed to create post" });
+  // Site Settings routes
+  app.get("/api/site-settings", async (req, res) => {
+    const settings = await storage.getSiteSettings();
+    if (!settings) {
+      return res.status(404).json({ message: "Site settings not found" });
     }
+    res.json(settings);
   });
 
-  app.put("/api/posts/:id", async (req: Request, res: Response) => {
+  app.put("/api/site-settings", isAdmin, async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid post ID" });
-      }
+      console.log("Received site settings update request:", JSON.stringify(req.body, null, 2));
       
-      const validation = updatePostSchema.safeParse(req.body);
-      
-      if (!validation.success) {
-        return res.status(400).json({ message: "Invalid post data", errors: validation.error.format() });
-      }
-      
-      const data = validation.data;
-      
-      // If title is provided, update the slug
-      if (data.title) {
-        data.slug = generateSlug(data.title);
-        
-        // Check if slug already exists for a different post
-        const existingPost = await storage.getPostBySlug(data.slug);
-        if (existingPost && existingPost.id !== id) {
-          return res.status(400).json({ message: "A post with this title already exists" });
-        }
-      }
-      
-      const updatedPost = await storage.updatePost(id, data);
-      
-      if (!updatedPost) {
-        return res.status(404).json({ message: "Post not found" });
-      }
-      
-      let category = null;
-      if (updatedPost.categoryId) {
-        category = await storage.getCategoryById(updatedPost.categoryId);
-      }
-      
-      const author = await storage.getUser(updatedPost.userId);
-      
-      res.json({
-        ...updatedPost,
-        category,
-        author
-      });
-    } catch (error) {
-      console.error("Error updating post:", error);
-      res.status(500).json({ message: "Failed to update post" });
-    }
-  });
-
-  app.delete("/api/posts/:id", async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid post ID" });
-      }
-      
-      const deleted = await storage.deletePost(id);
-      
-      if (!deleted) {
-        return res.status(404).json({ message: "Post not found" });
-      }
-      
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting post:", error);
-      res.status(500).json({ message: "Failed to delete post" });
-    }
-  });
-
-  // Comments endpoints
-  app.get("/api/posts/:postId/comments", async (req: Request, res: Response) => {
-    try {
-      const postId = parseInt(req.params.postId);
-      if (isNaN(postId)) {
-        return res.status(400).json({ message: "Invalid post ID" });
-      }
-      
-      const comments = await storage.getCommentsByPostId(postId);
-      
-      // Fetch author for each comment
-      const commentsWithAuthors = await Promise.all(comments.map(async (comment) => {
-        const author = await storage.getUser(comment.userId);
-        return {
-          ...comment,
-          author
-        };
-      }));
-      
-      res.json(commentsWithAuthors);
-    } catch (error) {
-      console.error("Error fetching comments:", error);
-      res.status(500).json({ message: "Failed to fetch comments" });
-    }
-  });
-
-  app.post("/api/posts/:postId/comments", async (req: Request, res: Response) => {
-    try {
-      const postId = parseInt(req.params.postId);
-      if (isNaN(postId)) {
-        return res.status(400).json({ message: "Invalid post ID" });
-      }
-      
-      // Hard-code user ID for now (in a real app, this would come from the authenticated user)
-      const userId = 1;
-      
-      const validation = insertCommentSchema
-        .omit({ userId: true, postId: true })
-        .safeParse(req.body);
-      
-      if (!validation.success) {
-        return res.status(400).json({ message: "Invalid comment data", errors: validation.error.format() });
-      }
-      
-      const post = await storage.getPostById(postId);
-      if (!post) {
-        return res.status(404).json({ message: "Post not found" });
-      }
-      
-      const newComment = await storage.createComment({
-        ...validation.data,
-        userId,
-        postId
-      });
-      
-      const author = await storage.getUser(newComment.userId);
-      
-      res.status(201).json({
-        ...newComment,
-        author
-      });
-    } catch (error) {
-      console.error("Error creating comment:", error);
-      res.status(500).json({ message: "Failed to create comment" });
-    }
-  });
-
-  app.delete("/api/comments/:id", async (req: Request, res: Response) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid comment ID" });
-      }
-      
-      const deleted = await storage.deleteComment(id);
-      
-      if (!deleted) {
-        return res.status(404).json({ message: "Comment not found" });
-      }
-      
-      res.status(204).send();
-    } catch (error) {
-      console.error("Error deleting comment:", error);
-      res.status(500).json({ message: "Failed to delete comment" });
-    }
-  });
-
-  // Seed data if needed
-  app.post("/api/seed", async (req: Request, res: Response) => {
-    try {
-      // First check if we already have a user
-      const existingUser = await storage.getUserByUsername("admin");
-      
-      if (!existingUser) {
-        // Create default admin user
-        await storage.createUser({
-          username: "admin",
-          password: "admin", // In a real app, this would be hashed
+      // حاول التحقق من صحة البيانات
+      let data;
+      try {
+        data = insertSiteSettingsSchema.partial().parse(req.body);
+        console.log("Parsed site settings data:", JSON.stringify(data, null, 2));
+      } catch (parseError) {
+        console.error("Site settings validation error:", parseError);
+        return res.status(400).json({ 
+          message: "Invalid data format", 
+          details: (parseError as Error).message 
         });
       }
       
-      // Check if we have categories
-      const categories = await storage.getAllCategories();
+      // تحديث الإعدادات
+      const settings = await storage.updateSiteSettings(data);
+      console.log("Site settings updated successfully:", JSON.stringify(settings, null, 2));
       
-      if (categories.length === 0) {
-        // Create some default categories
-        await Promise.all([
-          storage.createCategory({ name: "Technology", slug: "technology" }),
-          storage.createCategory({ name: "Design", slug: "design" }),
-          storage.createCategory({ name: "Business", slug: "business" }),
-          storage.createCategory({ name: "Programming", slug: "programming" }),
-        ]);
+      // إرجاع الإعدادات المحدثة
+      res.json(settings);
+    } catch (error) {
+      console.error("Error updating site settings:", error);
+      res.status(500).json({ 
+        message: "Failed to update settings", 
+        details: (error as Error).message 
+      });
+    }
+  });
+
+  // Analytics routes
+  app.get("/api/analytics/visits", isAdmin, async (req, res) => {
+    try {
+      const period = req.query.period as string || 'monthly';
+      const data = await storage.getVisitStats(period);
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  app.get("/api/analytics/posts", isAdmin, async (req, res) => {
+    try {
+      const stats = await storage.getPostStats();
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  app.get("/api/analytics/scholarships", isAdmin, async (req, res) => {
+    try {
+      const stats = await storage.getScholarshipStats();
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  app.get("/api/analytics/traffic-sources", isAdmin, async (req, res) => {
+    try {
+      const sources = await storage.getTrafficSources();
+      res.json(sources);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  app.get("/api/analytics/top-content", isAdmin, async (req, res) => {
+    try {
+      const type = req.query.type as string || 'posts';
+      const limit = parseInt(req.query.limit as string || '5');
+      const content = await storage.getTopContent(type, limit);
+      res.json(content);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  app.get("/api/analytics/dashboard", isAdmin, async (req, res) => {
+    try {
+      // جمع كل بيانات التحليلات في طلب واحد للوحة المعلومات
+      const period = req.query.period as string || 'monthly';
+      
+      const [visitStats, postStats, scholarshipStats, trafficSources, topPosts, topScholarships] = await Promise.all([
+        storage.getVisitStats(period),
+        storage.getPostStats(),
+        storage.getScholarshipStats(),
+        storage.getTrafficSources(),
+        storage.getTopContent('posts', 5),
+        storage.getTopContent('scholarships', 5)
+      ]);
+      
+      res.json({
+        visitStats,
+        postStats,
+        scholarshipStats,
+        trafficSources,
+        topContent: {
+          posts: topPosts,
+          scholarships: topScholarships
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  // Static Pages Routes
+  // إنشاء صفحة ثابتة جديدة (مدير فقط)
+  app.post("/api/pages", isAdmin, async (req, res) => {
+    try {
+      const data = insertPageSchema.parse(req.body);
+      const page = await storage.createPage(data);
+      res.status(201).json(page);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  // الحصول على جميع الصفحات الثابتة للإدارة (مدير فقط)
+  app.get("/api/admin/pages", isAdmin, async (req, res) => {
+    try {
+      const pages = await storage.listPages();
+      res.json(pages);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  // الحصول على جميع الصفحات الثابتة المنشورة للعرض في الواجهة الأمامية
+  app.get("/api/pages", async (req, res) => {
+    try {
+      // تصفية حسب المكان: الرأس أو التذييل أو كل الصفحات المنشورة
+      const showInHeader = req.query.header === "true";
+      const showInFooter = req.query.footer === "true";
+      
+      const filters: {
+        isPublished: boolean;
+        showInHeader?: boolean;
+        showInFooter?: boolean;
+      } = {
+        isPublished: true
+      };
+      
+      if (req.query.header !== undefined) {
+        filters.showInHeader = showInHeader;
       }
       
-      res.status(200).json({ message: "Seed data created successfully" });
+      if (req.query.footer !== undefined) {
+        filters.showInFooter = showInFooter;
+      }
+      
+      const pages = await storage.listPages(filters);
+      res.json(pages);
     } catch (error) {
-      console.error("Error seeding data:", error);
-      res.status(500).json({ message: "Failed to seed data" });
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  // الحصول على صفحة ثابتة محددة بواسطة المعرف (مدير فقط للصفحات غير المنشورة)
+  app.get("/api/pages/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "معرف الصفحة غير صالح" });
+      }
+      
+      const page = await storage.getPage(id);
+      if (!page) {
+        return res.status(404).json({ message: "الصفحة غير موجودة" });
+      }
+      
+      // إذا كانت الصفحة غير منشورة، يجب أن يكون المستخدم مديرًا
+      if (!page.isPublished && (!req.isAuthenticated() || (req.user as User).role !== "admin")) {
+        return res.status(403).json({ message: "غير مصرح بالوصول" });
+      }
+      
+      res.json(page);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  // الحصول على صفحة ثابتة محددة بواسطة الرابط المختصر
+  app.get("/api/pages/slug/:slug", async (req, res) => {
+    try {
+      const slug = req.params.slug;
+      const page = await storage.getPageBySlug(slug);
+      
+      if (!page) {
+        return res.status(404).json({ message: "الصفحة غير موجودة" });
+      }
+      
+      // إذا كانت الصفحة غير منشورة، يجب أن يكون المستخدم مديرًا
+      if (!page.isPublished && (!req.isAuthenticated() || (req.user as User).role !== "admin")) {
+        return res.status(403).json({ message: "غير مصرح بالوصول" });
+      }
+      
+      res.json(page);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  // تحديث صفحة ثابتة (مدير فقط)
+  app.put("/api/pages/:id", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "معرف الصفحة غير صالح" });
+      }
+      
+      const data = insertPageSchema.partial().parse(req.body);
+      const page = await storage.updatePage(id, data);
+      
+      if (!page) {
+        return res.status(404).json({ message: "الصفحة غير موجودة" });
+      }
+      
+      res.json(page);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  // حذف صفحة ثابتة (مدير فقط)
+  app.delete("/api/pages/:id", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "معرف الصفحة غير صالح" });
+      }
+      
+      const success = await storage.deletePage(id);
+      if (!success) {
+        return res.status(404).json({ message: "الصفحة غير موجودة" });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
     }
   });
 
