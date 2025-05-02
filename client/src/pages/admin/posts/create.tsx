@@ -365,30 +365,56 @@ export default function CreatePostPage() {
     }
   };
   
+  // استعلام عن تصنيفات المقال
+  const { data: postTags = [] } = useQuery<any[]>({
+    queryKey: ['/api/posts', postId, 'tags'],
+    queryFn: async () => {
+      if (!postId) return [];
+      try {
+        const response = await fetch(`/api/posts/${postId}/tags`);
+        if (!response.ok) {
+          throw new Error('فشل في استلام تصنيفات المقال');
+        }
+        return response.json();
+      } catch (error) {
+        console.error('Failed to fetch post tags:', error);
+        return [];
+      }
+    },
+    enabled: !!postId,
+  });
+
   // تحميل بيانات المقال عند التعديل
   useEffect(() => {
     if (postData && isEditMode) {
       console.log("تحميل بيانات المقال للتعديل:", postData);
       console.log("محتوى المقال:", postData.content);
       
-      // استخراج تصنيفات المقال (مثال افتراضي، يجب تعديله وفقًا للبيانات الحقيقية)
-      const postTags: number[] = []; // يمكن استرجاع هذه من الAPI
+      // استخراج معرفات التصنيفات
+      const tagIds = postTags.map(tag => tag.id) || [];
+      console.log("تصنيفات المقال:", tagIds);
       
+      // تحميل القيم في النموذج بشكل كامل
       form.reset({
         title: postData.title || '',
         slug: postData.slug || '',
         excerpt: postData.excerpt || '',
+        // نتأكد من أن محتوى المقال ليس فارغًا
         content: postData.content || '',
         isPublished: postData.isPublished || true,
         seoTitle: postData.seoTitle || '',
         seoDescription: postData.seoDescription || '',
         seoKeywords: postData.seoKeywords || '',
         focusKeyword: postData.focusKeyword || '',
-        selectedTags: postTags,
+        selectedTags: tagIds,
         featuredImage: postData.imageUrl || '',
       });
+
+      // طباعة قيم النموذج بعد التحميل للتأكد
+      console.log("قيم النموذج بعد التحميل:", form.getValues());
+      console.log("المحتوى المحمل في النموذج:", form.getValues('content'));
     }
-  }, [postData, isEditMode, form]);
+  }, [postData, postTags, isEditMode, form]);
   
   // محتوى الصفحة
   const pageActions = (
