@@ -74,8 +74,8 @@ export default function RichEditor({
   const [seoAnalysis, setSeoAnalysis] = useState<Array<{text: string, status: 'good' | 'warning' | 'bad', score: number}>>([]);
   const [readabilityAnalysis, setReadabilityAnalysis] = useState<Array<{text: string, status: 'good' | 'warning' | 'bad', score: number}>>([]);
   
-  // القيمة من البيئة
-  const apiKey = process.env.TINYMCE_API_KEY || 'no-api-key';
+  // القيمة من البيئة (في Vite نستخدم import.meta.env)
+  const apiKey = import.meta.env.VITE_TINYMCE_API_KEY || 'no-api-key';
   
   // التغييرات في المحتوى
   const handleEditorChange = (newContent: string) => {
@@ -471,7 +471,7 @@ export default function RichEditor({
           
           <Editor
             apiKey={apiKey}
-            onInit={(evt, editor) => editorRef.current = editor}
+            onInit={(evt: any, editor: any) => editorRef.current = editor}
             initialValue={initialValue}
             value={content}
             onEditorChange={handleEditorChange}
@@ -482,11 +482,11 @@ export default function RichEditor({
                 'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
                 'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
                 'insertdatetime', 'media', 'table', 'preview', 'help', 'wordcount',
-                'directionality', 'emoticons', 'template', 'codesample', 'hr',
-                'pagebreak', 'nonbreaking', 'toc', 'imagetools', 'autoresize'
+                'directionality', 'emoticons', 'codesample', 'pagebreak', 'nonbreaking', 
+                'autoresize'
               ],
               toolbar1: 'undo redo | styles | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | numlist bullist | link image | ltr rtl | preview',
-              toolbar2: 'forecolor backcolor | removeformat | table | hr | pagebreak | emoticons | visualblocks | searchreplace | template | codesample | fullscreen',
+              toolbar2: 'forecolor backcolor | removeformat | table | pagebreak | emoticons | visualblocks | searchreplace | codesample | fullscreen',
               content_style: 'body { font-family:Arial,Helvetica,sans-serif; font-size:14px }',
               menubar: true,
               statusbar: true,
@@ -498,12 +498,12 @@ export default function RichEditor({
               placeholder: placeholder,
               readonly: readOnly,
               block_formats: 'Paragraph=p; Heading 1=h1; Heading 2=h2; Heading 3=h3; Heading 4=h4; Heading 5=h5; Heading 6=h6;',
-              setup: (editor) => {
-                editor.on('WordCountUpdate', function(e) {
+              setup: (editor: any) => {
+                editor.on('WordCountUpdate', function(e: any) {
                   setWordCount(e.wordCount);
                 });
               },
-              images_upload_handler: (blobInfo, progress) => new Promise((resolve, reject) => {
+              images_upload_handler: (blobInfo: any, progress: any) => new Promise((resolve, reject) => {
                 // هنا يمكن إضافة منطق رفع الصور إلى الخادم
                 const reader = new FileReader();
                 reader.onload = () => {
