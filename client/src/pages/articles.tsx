@@ -8,8 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import SearchBar from '@/components/search-bar';
 import { formatDate } from '@/lib/utils';
-import { Post, User } from '@shared/schema';
+import { Post, User, Tag as TagType } from '@shared/schema';
 import { Helmet } from 'react-helmet';
+import { apiRequest } from '@/lib/queryClient';
 
 const Articles = () => {
   const [location, setLocation] = useLocation();
@@ -31,6 +32,42 @@ const Articles = () => {
   const { data: users } = useQuery<User[]>({
     queryKey: ['/api/users'],
   });
+  
+  // جلب التصنيفات
+  const { data: tags } = useQuery<TagType[]>({
+    queryKey: ['/api/tags'],
+  });
+  
+  // الحصول على تصنيفات المقال
+  const [postTagsMap, setPostTagsMap] = useState<Record<number, TagType[]>>({});
+  
+  useEffect(() => {
+    const fetchPostTags = async () => {
+      if (posts && posts.length > 0) {
+        const tagsMap: Record<number, TagType[]> = {};
+        
+        for (const post of posts) {
+          try {
+            const response = await fetch(`/api/posts/${post.id}/tags`);
+            if (response.ok) {
+              const data = await response.json();
+              tagsMap[post.id] = data;
+            } else {
+              console.error(`Error fetching tags for post ${post.id}: ${response.status}`);
+              tagsMap[post.id] = [];
+            }
+          } catch (error) {
+            console.error(`Error fetching tags for post ${post.id}:`, error);
+            tagsMap[post.id] = [];
+          }
+        }
+        
+        setPostTagsMap(tagsMap);
+      }
+    };
+    
+    fetchPostTags();
+  }, [posts]);
 
   // الحصول على اسم المؤلف
   const getAuthorName = (authorId?: number) => {
@@ -63,7 +100,7 @@ const Articles = () => {
         <link rel="canonical" href="https://fullsco.com/articles" />
       </Helmet>
 
-      <main className="bg-gradient-to-br from-white to-gray-50 py-12">
+      <main className="bg-gradient-to-br from-white to-gray-50 py-12" dir="rtl">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="relative mb-12 rounded-2xl bg-gradient-to-br from-accent/5 via-accent/10 to-accent/5 p-8 shadow-lg overflow-hidden">
             <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-accent/10 blur-3xl"></div>
@@ -90,7 +127,7 @@ const Articles = () => {
           </div>
 
           {/* المقالات المميزة */}
-          {posts?.filter(post => post.isFeatured).length > 0 && (
+          {posts && posts.filter(post => post.isFeatured).length > 0 && (
             <div className="mb-12">
               <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
                 <Star className="ml-2 h-5 w-5 text-amber-500" />
@@ -210,9 +247,17 @@ const Articles = () => {
                     
                     <CardContent className="p-6 bg-white">
                       <div className="mb-3 flex items-center flex-wrap gap-2">
-                        <Badge variant="secondary" className="rounded-full bg-accent/10 text-accent hover:bg-accent/20 transition-colors">
-                          <Tag className="ml-1 h-3 w-3" /> مقال
-                        </Badge>
+                        {postTagsMap[post.id]?.length > 0 ? (
+                          postTagsMap[post.id].map(tag => (
+                            <Badge key={tag.id} variant="secondary" className="rounded-full bg-accent/10 text-accent hover:bg-accent/20 transition-colors">
+                              <Tag className="ml-1 h-3 w-3" /> {tag.name}
+                            </Badge>
+                          ))
+                        ) : (
+                          <Badge variant="secondary" className="rounded-full bg-accent/10 text-accent hover:bg-accent/20 transition-colors">
+                            <Tag className="ml-1 h-3 w-3" /> مقال
+                          </Badge>
+                        )}
                         <Badge variant="outline" className="rounded-full border-gray-200 text-gray-600 flex items-center ml-auto">
                           <Eye className="ml-1 h-3 w-3" /> {post.views || 0} مشاهدة
                         </Badge>
