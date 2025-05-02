@@ -75,7 +75,7 @@ export default function RichEditor({
   const [readabilityAnalysis, setReadabilityAnalysis] = useState<Array<{text: string, status: 'good' | 'warning' | 'bad', score: number}>>([]);
   
   // القيمة من البيئة
-  const apiKey = process.env.TINYMCE_API_KEY || 'no-api-key';
+  const apiKey = import.meta.env.VITE_TINYMCE_API_KEY || 'no-api-key';
   
   // التغييرات في المحتوى
   const handleEditorChange = (newContent: string) => {
