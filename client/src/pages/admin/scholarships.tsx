@@ -135,11 +135,18 @@ const AdminScholarships = () => {
   const filteredScholarships = scholarships?.filter((scholarship) => {
     if (!searchTerm) return true;
     const search = searchTerm.toLowerCase();
+    
+    // التأكد من وجود النص قبل استخدام toLowerCase
+    const title = scholarship.title?.toLowerCase() || '';
+    const description = scholarship.description?.toLowerCase() || '';
+    const countryName = getCountryName(scholarship.countryId).toLowerCase();
+    const levelName = getLevelName(scholarship.levelId).toLowerCase();
+    
     return (
-      scholarship.title.toLowerCase().includes(search) ||
-      scholarship.description.toLowerCase().includes(search) ||
-      getCountryName(scholarship.countryId).toLowerCase().includes(search) ||
-      getLevelName(scholarship.levelId).toLowerCase().includes(search)
+      title.includes(search) ||
+      description.includes(search) ||
+      countryName.includes(search) ||
+      levelName.includes(search)
     );
   });
 

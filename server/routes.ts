@@ -287,30 +287,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(scholarships);
   });
 
+  // مسار الحصول على المنح المميزة
   app.get("/api/scholarships/featured", async (req, res) => {
-    const scholarships = await storage.listScholarships({ isFeatured: true });
-    res.json(scholarships);
+    try {
+      const scholarships = await storage.listScholarships({ isFeatured: true });
+      res.json(scholarships);
+    } catch (error) {
+      console.error("Error fetching featured scholarships:", error);
+      res.status(500).json({ message: "Failed to fetch featured scholarships", error: (error as Error).message });
+    }
   });
 
+  // مسار الحصول على المنحة بواسطة الـ slug
   app.get("/api/scholarships/slug/:slug", async (req, res) => {
-    const slug = req.params.slug;
-    const scholarship = await storage.getScholarshipBySlug(slug);
-    if (!scholarship) {
-      return res.status(404).json({ message: "Scholarship not found" });
+    try {
+      const slug = req.params.slug;
+      const scholarship = await storage.getScholarshipBySlug(slug);
+      if (!scholarship) {
+        return res.status(404).json({ message: "Scholarship not found" });
+      }
+      res.json(scholarship);
+    } catch (error) {
+      console.error("Error fetching scholarship by slug:", error);
+      res.status(500).json({ message: "Failed to fetch scholarship", error: (error as Error).message });
     }
-    res.json(scholarship);
   });
   
+  // مسار الحصول على المنحة بواسطة المعرف (ID)
+  // هذا المسار يجب أن يكون بعد المسارات المحددة مثل /featured و /slug
   app.get("/api/scholarships/:id", async (req, res) => {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ message: "Invalid scholarship ID" });
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid scholarship ID" });
+      }
+      console.log(`Fetching scholarship with ID: ${id}`);
+      const scholarship = await storage.getScholarship(id);
+      if (!scholarship) {
+        return res.status(404).json({ message: "Scholarship not found" });
+      }
+      res.json(scholarship);
+    } catch (error) {
+      console.error(`Error fetching scholarship with ID ${req.params.id}:`, error);
+      res.status(500).json({ message: "Failed to fetch scholarship", error: (error as Error).message });
     }
-    const scholarship = await storage.getScholarship(id);
-    if (!scholarship) {
-      return res.status(404).json({ message: "Scholarship not found" });
-    }
-    res.json(scholarship);
   });
 
   app.put("/api/scholarships/:id", isAdmin, async (req, res) => {
@@ -373,41 +393,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/posts/featured", async (req, res) => {
-    const posts = await storage.listPosts({ isFeatured: true });
-    res.json(posts);
-  });
-
-  app.get("/api/posts/:id", async (req, res) => {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
-      return res.status(400).json({ message: "Invalid post ID" });
+    try {
+      const posts = await storage.listPosts({ isFeatured: true });
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching featured posts:", error);
+      res.status(500).json({ message: "Failed to fetch featured posts", error: (error as Error).message });
     }
-    const post = await storage.getPost(id);
-    if (!post) {
-      return res.status(404).json({ message: "Post not found" });
-    }
-    
-    // Increment view count
-    await storage.incrementPostViews(id);
-    
-    // Get updated post with incremented view count
-    const updatedPost = await storage.getPost(id);
-    res.json(updatedPost);
   });
 
   app.get("/api/posts/slug/:slug", async (req, res) => {
-    const slug = req.params.slug;
-    const post = await storage.getPostBySlug(slug);
-    if (!post) {
-      return res.status(404).json({ message: "Post not found" });
+    try {
+      const slug = req.params.slug;
+      const post = await storage.getPostBySlug(slug);
+      if (!post) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+      
+      // Increment view count
+      await storage.incrementPostViews(post.id);
+      
+      // Get updated post with incremented view count
+      const updatedPost = await storage.getPost(post.id);
+      res.json(updatedPost);
+    } catch (error) {
+      console.error("Error fetching post by slug:", error);
+      res.status(500).json({ message: "Failed to fetch post", error: (error as Error).message });
     }
-    
-    // Increment view count
-    await storage.incrementPostViews(post.id);
-    
-    // Get updated post with incremented view count
-    const updatedPost = await storage.getPost(post.id);
-    res.json(updatedPost);
+  });
+  
+  app.get("/api/posts/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid post ID" });
+      }
+      console.log(`Fetching post with ID: ${id}`);
+      const post = await storage.getPost(id);
+      if (!post) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+      
+      // Increment view count
+      await storage.incrementPostViews(id);
+      
+      // Get updated post with incremented view count
+      const updatedPost = await storage.getPost(id);
+      res.json(updatedPost);
+    } catch (error) {
+      console.error(`Error fetching post with ID ${req.params.id}:`, error);
+      res.status(500).json({ message: "Failed to fetch post", error: (error as Error).message });
+    }
   });
 
   app.put("/api/posts/:id", isAdmin, async (req, res) => {
