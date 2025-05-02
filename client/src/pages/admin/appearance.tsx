@@ -2,19 +2,29 @@ import { useQuery } from '@tanstack/react-query';
 import { Palette, Save, Moon, Sun, EyeOff, Eye } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
+// Define site settings type
+type SiteSettings = {
+  primaryColor?: string;
+  secondaryColor?: string;
+  accentColor?: string;
+  enableDarkMode?: boolean;
+  rtlDirection?: boolean;
+  [key: string]: any;
+};
+
 const AdminAppearance = () => {
   // Fetch site settings
-  const { data: settings, isLoading } = useQuery({
+  const { data: settings, isLoading } = useQuery<SiteSettings>({
     queryKey: ['/api/site-settings'],
   });
   
   // State for color settings
-  const [colorSettings, setColorSettings] = useState({
-    primaryColor: settings?.primaryColor || '#3b82f6',
-    secondaryColor: settings?.secondaryColor || '#f59e0b',
-    accentColor: settings?.accentColor || '#000fff',
-    enableDarkMode: settings?.enableDarkMode || false,
-    rtlDirection: settings?.rtlDirection || true,
+  const [colorSettings, setColorSettings] = useState<SiteSettings>({
+    primaryColor: '#3b82f6',
+    secondaryColor: '#f59e0b',
+    accentColor: '#000fff',
+    enableDarkMode: false,
+    rtlDirection: true,
   });
 
   // Initialize state with settings when loaded

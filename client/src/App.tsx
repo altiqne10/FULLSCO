@@ -32,6 +32,13 @@ import AdminLogin from "@/pages/admin/login";
 // New Admin Dashboard Component
 import NewDashboard from "@/pages/admin/new-dashboard";
 
+// New Admin Pages
+import AdminSubscribers from "@/pages/admin/subscribers";
+import AdminSuccessStories from "@/pages/admin/success-stories";
+import AdminHomeLayout from "@/pages/admin/home-layout";
+import AdminAppearance from "@/pages/admin/appearance";
+import AdminMessages from "@/pages/admin/messages";
+
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { useEffect } from "react";
@@ -122,6 +129,13 @@ function App() {
                     <Route path="/admin/analytics" component={AdminAnalytics} />
                     <Route path="/admin/scholarships/create" component={CreateScholarship} />
                     <Route path="/admin/posts/create" component={CreatePost} />
+
+                    {/* New Admin Routes */}
+                    <Route path="/admin/subscribers" component={AdminSubscribers} />
+                    <Route path="/admin/success-stories" component={AdminSuccessStories} />
+                    <Route path="/admin/home-layout" component={AdminHomeLayout} />
+                    <Route path="/admin/appearance" component={AdminAppearance} />
+                    <Route path="/admin/messages" component={AdminMessages} />
                     
                     {/* Fallback to 404 */}
                     <Route component={NotFound} />

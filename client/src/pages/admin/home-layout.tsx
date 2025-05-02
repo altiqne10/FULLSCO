@@ -1,26 +1,59 @@
 import { useQuery } from '@tanstack/react-query';
 import { PanelLeft, Check, Save, Home, Columns } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+// Define site settings type
+type SiteSettings = {
+  showHeroSection?: boolean;
+  showFeaturedScholarships?: boolean;
+  showSearchSection?: boolean;
+  showCategoriesSection?: boolean;
+  showCountriesSection?: boolean;
+  showLatestArticles?: boolean;
+  showSuccessStories?: boolean;
+  showNewsletterSection?: boolean;
+  showStatisticsSection?: boolean;
+  showPartnersSection?: boolean;
+  [key: string]: any;
+};
 
 const AdminHomeLayout = () => {
   // Fetch site settings
-  const { data: settings, isLoading } = useQuery({
+  const { data: settings, isLoading } = useQuery<SiteSettings>({
     queryKey: ['/api/site-settings'],
   });
 
   // State for settings
-  const [siteSettings, setSiteSettings] = useState({
-    showHeroSection: settings?.showHeroSection ?? true,
-    showFeaturedScholarships: settings?.showFeaturedScholarships ?? true,
-    showSearchSection: settings?.showSearchSection ?? true,
-    showCategoriesSection: settings?.showCategoriesSection ?? true,
-    showCountriesSection: settings?.showCountriesSection ?? true,
-    showLatestArticles: settings?.showLatestArticles ?? true,
-    showSuccessStories: settings?.showSuccessStories ?? true,
-    showNewsletterSection: settings?.showNewsletterSection ?? true,
-    showStatisticsSection: settings?.showStatisticsSection ?? true,
-    showPartnersSection: settings?.showPartnersSection ?? true,
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>({
+    showHeroSection: true,
+    showFeaturedScholarships: true,
+    showSearchSection: true,
+    showCategoriesSection: true,
+    showCountriesSection: true,
+    showLatestArticles: true,
+    showSuccessStories: true,
+    showNewsletterSection: true,
+    showStatisticsSection: true,
+    showPartnersSection: true,
   });
+  
+  // Update state when settings are loaded
+  useEffect(() => {
+    if (settings) {
+      setSiteSettings({
+        showHeroSection: settings.showHeroSection ?? true,
+        showFeaturedScholarships: settings.showFeaturedScholarships ?? true,
+        showSearchSection: settings.showSearchSection ?? true,
+        showCategoriesSection: settings.showCategoriesSection ?? true,
+        showCountriesSection: settings.showCountriesSection ?? true,
+        showLatestArticles: settings.showLatestArticles ?? true,
+        showSuccessStories: settings.showSuccessStories ?? true,
+        showNewsletterSection: settings.showNewsletterSection ?? true,
+        showStatisticsSection: settings.showStatisticsSection ?? true,
+        showPartnersSection: settings.showPartnersSection ?? true,
+      });
+    }
+  }, [settings]);
 
   // Update settings handler
   const handleToggle = (settingName: string) => {
