@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MessageSquare, Search, Trash2, Star, CheckCircle, XCircle } from 'lucide-react';
+import AdminLayout from '@/components/admin/admin-layout';
 
 // Mock data for messages (would normally be fetched from API)
 const mockMessages = [
@@ -144,12 +145,8 @@ const AdminMessages = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <header className="border-b bg-white shadow-sm py-4 px-6">
-        <h1 className="text-2xl font-bold">الرسائل</h1>
-      </header>
-      
-      <main className="flex-1 flex">
+    <AdminLayout title="الرسائل" actions={null}>
+      <div className="flex flex-col md:flex-row w-full">
         {/* Sidebar */}
         <div className="w-full md:w-80 lg:w-96 border-l bg-white">
           {/* Search */}
@@ -213,7 +210,7 @@ const AdminMessages = () => {
           </div>
           
           {/* Messages List */}
-          <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+          <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
             {filteredMessages.length === 0 ? (
               <div className="p-8 text-center">
                 <MessageSquare className="h-12 w-12 mx-auto text-gray-400 mb-3" />
@@ -374,8 +371,8 @@ const AdminMessages = () => {
             </div>
           )}
         </div>
-      </main>
-    </div>
+      </div>
+    </AdminLayout>
   );
 };
 

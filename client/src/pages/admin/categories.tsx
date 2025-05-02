@@ -4,6 +4,7 @@ import { PlusCircle, Edit, Trash2, RefreshCw, Check, X } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import AdminLayout from '@/components/admin/admin-layout';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -217,189 +218,48 @@ export default function CategoriesPage() {
     }
   };
 
+  const actions = (
+    <div className="flex gap-2">
+      <Button variant="outline" onClick={() => refetch()}>
+        <RefreshCw className="ml-2 h-4 w-4" />
+        تحديث
+      </Button>
+      <Button onClick={() => setIsAddDialogOpen(true)}>
+        <PlusCircle className="ml-2 h-4 w-4" />
+        إضافة تصنيف
+      </Button>
+    </div>
+  );
+
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">إدارة التصنيفات</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => refetch()}>
-            <RefreshCw className="ml-2 h-4 w-4" />
-            تحديث
-          </Button>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <PlusCircle className="ml-2 h-4 w-4" />
-                إضافة تصنيف
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>إضافة تصنيف جديد</DialogTitle>
-                <DialogDescription>
-                  أضف تصنيفًا جديدًا للمنح الدراسية هنا. اضغط على حفظ عند الانتهاء.
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...addForm}>
-                <form onSubmit={addForm.handleSubmit(onSubmitAdd)} className="space-y-4">
-                  <FormField
-                    control={addForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>اسم التصنيف</FormLabel>
-                        <FormControl>
-                          <Input {...field} onChange={handleNameChangeAdd} placeholder="مثال: دراسات عليا" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={addForm.control}
-                    name="slug"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>الاسم المختصر (Slug)</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="مثال: graduate-studies" dir="ltr" />
-                        </FormControl>
-                        <FormDescription>
-                          سيستخدم هذا في عنوان URL. يجب أن يحتوي على أحرف صغيرة وأرقام وشرطات فقط.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={addForm.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>الوصف</FormLabel>
-                        <FormControl>
-                          <Textarea {...field} placeholder="وصف اختياري للتصنيف" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <DialogFooter>
-                    <Button type="submit" disabled={addMutation.isPending}>
-                      {addMutation.isPending ? (
-                        <>
-                          <RefreshCw className="ml-2 h-4 w-4 animate-spin" />
-                          جاري الحفظ...
-                        </>
-                      ) : (
-                        <>
-                          <Check className="ml-2 h-4 w-4" />
-                          حفظ
-                        </>
-                      )}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>قائمة التصنيفات</CardTitle>
-          <CardDescription>
-            جميع تصنيفات المنح الدراسية المتوفرة في الموقع
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center items-center h-32">
-              <RefreshCw className="h-6 w-6 animate-spin" />
-              <span className="mr-2">جاري التحميل...</span>
-            </div>
-          ) : isError ? (
-            <div className="text-center py-4 text-red-500">
-              <p>حدث خطأ أثناء تحميل البيانات. يرجى المحاولة مرة أخرى.</p>
-              <Button variant="outline" onClick={() => refetch()} className="mt-2">
-                إعادة المحاولة
-              </Button>
-            </div>
-          ) : categories && categories.length > 0 ? (
-            <div className="overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12 text-right">الرقم</TableHead>
-                    <TableHead className="text-right">الاسم</TableHead>
-                    <TableHead className="text-right">الاسم المختصر</TableHead>
-                    <TableHead className="text-right">الوصف</TableHead>
-                    <TableHead className="text-left w-[120px]">الإجراءات</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {categories.map((category) => (
-                    <TableRow key={category.id}>
-                      <TableCell>{category.id}</TableCell>
-                      <TableCell className="font-medium">{category.name}</TableCell>
-                      <TableCell dir="ltr">{category.slug}</TableCell>
-                      <TableCell>{category.description || "—"}</TableCell>
-                      <TableCell>
-                        <div className="flex justify-end gap-2">
-                          <Button size="icon" variant="ghost" onClick={() => handleEdit(category)}>
-                            <Edit className="h-4 w-4" />
-                            <span className="sr-only">تعديل</span>
-                          </Button>
-                          <Button size="icon" variant="ghost" className="text-red-500" onClick={() => handleDelete(category)}>
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">حذف</span>
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="text-center py-6 text-muted-foreground">
-              <p>لا توجد تصنيفات حاليًا.</p>
-              <Button variant="outline" onClick={() => setIsAddDialogOpen(true)} className="mt-2">
-                إضافة تصنيف جديد
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* نافذة تعديل التصنيف */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>تعديل التصنيف</DialogTitle>
-            <DialogDescription>
-              قم بتعديل بيانات التصنيف هنا. اضغط على حفظ عند الانتهاء.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedCategory && (
-            <Form {...editForm}>
-              <form onSubmit={editForm.handleSubmit(onSubmitEdit)} className="space-y-4">
+    <AdminLayout title="إدارة التصنيفات" actions={actions}>
+      <div className="space-y-6">
+        {/* نافذة إضافة تصنيف */}
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>إضافة تصنيف جديد</DialogTitle>
+              <DialogDescription>
+                أضف تصنيفًا جديدًا للمنح الدراسية هنا. اضغط على حفظ عند الانتهاء.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...addForm}>
+              <form onSubmit={addForm.handleSubmit(onSubmitAdd)} className="space-y-4">
                 <FormField
-                  control={editForm.control}
+                  control={addForm.control}
                   name="name"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>اسم التصنيف</FormLabel>
                       <FormControl>
-                        <Input {...field} onChange={handleNameChangeEdit} placeholder="مثال: دراسات عليا" />
+                        <Input {...field} onChange={handleNameChangeAdd} placeholder="مثال: دراسات عليا" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 <FormField
-                  control={editForm.control}
+                  control={addForm.control}
                   name="slug"
                   render={({ field }) => (
                     <FormItem>
@@ -415,7 +275,7 @@ export default function CategoriesPage() {
                   )}
                 />
                 <FormField
-                  control={editForm.control}
+                  control={addForm.control}
                   name="description"
                   render={({ field }) => (
                     <FormItem>
@@ -428,8 +288,8 @@ export default function CategoriesPage() {
                   )}
                 />
                 <DialogFooter>
-                  <Button type="submit" disabled={updateMutation.isPending}>
-                    {updateMutation.isPending ? (
+                  <Button type="submit" disabled={addMutation.isPending}>
+                    {addMutation.isPending ? (
                       <>
                         <RefreshCw className="ml-2 h-4 w-4 animate-spin" />
                         جاري الحفظ...
@@ -444,46 +304,188 @@ export default function CategoriesPage() {
                 </DialogFooter>
               </form>
             </Form>
-          )}
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
 
-      {/* نافذة تأكيد الحذف */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>هل أنت متأكد من حذف هذا التصنيف؟</AlertDialogTitle>
-            <AlertDialogDescription>
-              هذا الإجراء لا يمكن التراجع عنه. سيتم حذف التصنيف نهائيًا من قاعدة البيانات.
-              {selectedCategory && (
-                <p className="font-medium mt-2">
-                  التصنيف: {selectedCategory.name}
-                </p>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmDelete}
-              className="bg-red-500 hover:bg-red-600 text-white"
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? (
-                <>
-                  <RefreshCw className="ml-2 h-4 w-4 animate-spin" />
-                  جاري الحذف...
-                </>
-              ) : (
-                <>
-                  <Trash2 className="ml-2 h-4 w-4" />
-                  نعم، حذف التصنيف
-                </>
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>قائمة التصنيفات</CardTitle>
+            <CardDescription>
+              جميع تصنيفات المنح الدراسية المتوفرة في الموقع
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex justify-center items-center h-32">
+                <RefreshCw className="h-6 w-6 animate-spin" />
+                <span className="mr-2">جاري التحميل...</span>
+              </div>
+            ) : isError ? (
+              <div className="text-center py-4 text-red-500">
+                <p>حدث خطأ أثناء تحميل البيانات. يرجى المحاولة مرة أخرى.</p>
+                <Button variant="outline" onClick={() => refetch()} className="mt-2">
+                  إعادة المحاولة
+                </Button>
+              </div>
+            ) : categories && categories.length > 0 ? (
+              <div className="overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12 text-right">الرقم</TableHead>
+                      <TableHead className="text-right">الاسم</TableHead>
+                      <TableHead className="text-right">الاسم المختصر</TableHead>
+                      <TableHead className="text-right">الوصف</TableHead>
+                      <TableHead className="text-left w-[120px]">الإجراءات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {categories.map((category) => (
+                      <TableRow key={category.id}>
+                        <TableCell>{category.id}</TableCell>
+                        <TableCell className="font-medium">{category.name}</TableCell>
+                        <TableCell dir="ltr">{category.slug}</TableCell>
+                        <TableCell>{category.description || "—"}</TableCell>
+                        <TableCell>
+                          <div className="flex justify-end gap-2">
+                            <Button size="icon" variant="ghost" onClick={() => handleEdit(category)}>
+                              <Edit className="h-4 w-4" />
+                              <span className="sr-only">تعديل</span>
+                            </Button>
+                            <Button size="icon" variant="ghost" className="text-red-500" onClick={() => handleDelete(category)}>
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">حذف</span>
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="text-center py-6 text-muted-foreground">
+                <p>لا توجد تصنيفات حاليًا.</p>
+                <Button variant="outline" onClick={() => setIsAddDialogOpen(true)} className="mt-2">
+                  إضافة تصنيف جديد
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* نافذة تعديل التصنيف */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>تعديل التصنيف</DialogTitle>
+              <DialogDescription>
+                قم بتعديل بيانات التصنيف هنا. اضغط على حفظ عند الانتهاء.
+              </DialogDescription>
+            </DialogHeader>
+            {selectedCategory && (
+              <Form {...editForm}>
+                <form onSubmit={editForm.handleSubmit(onSubmitEdit)} className="space-y-4">
+                  <FormField
+                    control={editForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>اسم التصنيف</FormLabel>
+                        <FormControl>
+                          <Input {...field} onChange={handleNameChangeEdit} placeholder="مثال: دراسات عليا" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={editForm.control}
+                    name="slug"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>الاسم المختصر (Slug)</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="مثال: graduate-studies" dir="ltr" />
+                        </FormControl>
+                        <FormDescription>
+                          سيستخدم هذا في عنوان URL. يجب أن يحتوي على أحرف صغيرة وأرقام وشرطات فقط.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={editForm.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>الوصف</FormLabel>
+                        <FormControl>
+                          <Textarea {...field} placeholder="وصف اختياري للتصنيف" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <DialogFooter>
+                    <Button type="submit" disabled={updateMutation.isPending}>
+                      {updateMutation.isPending ? (
+                        <>
+                          <RefreshCw className="ml-2 h-4 w-4 animate-spin" />
+                          جاري الحفظ...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="ml-2 h-4 w-4" />
+                          حفظ
+                        </>
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* نافذة تأكيد الحذف */}
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>هل أنت متأكد من حذف هذا التصنيف؟</AlertDialogTitle>
+              <AlertDialogDescription>
+                هذا الإجراء لا يمكن التراجع عنه. سيتم حذف التصنيف نهائيًا من قاعدة البيانات.
+                {selectedCategory && (
+                  <p className="font-medium mt-2">
+                    التصنيف: {selectedCategory.name}
+                  </p>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>إلغاء</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={confirmDelete}
+                className="bg-red-500 hover:bg-red-600 text-white"
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? (
+                  <>
+                    <RefreshCw className="ml-2 h-4 w-4 animate-spin" />
+                    جاري الحذف...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="ml-2 h-4 w-4" />
+                    نعم، حذف التصنيف
+                  </>
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </AdminLayout>
   );
 }
