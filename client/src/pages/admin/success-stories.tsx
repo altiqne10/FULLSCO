@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Trophy, PlusCircle, Edit, Trash2, Search } from 'lucide-react';
 import { useState } from 'react';
 import { useSuccessStories } from '@/hooks/use-success-stories';
+import AdminLayout from '@/components/admin/admin-layout';
+import { useLocation } from 'wouter';
 
 // Define success story type
 type SuccessStory = {
@@ -16,6 +18,7 @@ type SuccessStory = {
 
 const AdminSuccessStories = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [, setLocation] = useLocation();
   
   // Use our hooks/use-success-stories to get actual data
   const { successStories, isLoading } = useSuccessStories();
@@ -28,13 +31,20 @@ const AdminSuccessStories = () => {
       )
     : [];
 
+  // Actions for AdminLayout
+  const actions = (
+    <button 
+      onClick={() => setLocation('/admin/success-stories/create')}
+      className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 flex items-center gap-2"
+    >
+      <PlusCircle className="h-4 w-4" />
+      إضافة قصة جديدة
+    </button>
+  );
+
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <header className="border-b bg-white shadow-sm py-4 px-6">
-        <h1 className="text-2xl font-bold">إدارة قصص النجاح</h1>
-      </header>
-      
-      <main className="flex-1 p-6">
+    <AdminLayout title="إدارة قصص النجاح" actions={actions}>
+      <main>
         {/* Search and Actions */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
           <div className="relative w-full md:w-64">
@@ -180,7 +190,7 @@ const AdminSuccessStories = () => {
           </div>
         </div>
       </main>
-    </div>
+    </AdminLayout>
   );
 };
 

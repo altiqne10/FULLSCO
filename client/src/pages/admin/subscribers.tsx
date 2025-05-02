@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Mail, Trash2, Search } from 'lucide-react';
 import { useState } from 'react';
+import AdminLayout from '@/components/admin/admin-layout';
 
 const AdminSubscribers = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -18,12 +19,8 @@ const AdminSubscribers = () => {
     : [];
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <header className="border-b bg-white shadow-sm py-4 px-6">
-        <h1 className="text-2xl font-bold">إدارة المشتركين في النشرة البريدية</h1>
-      </header>
-      
-      <main className="flex-1 p-6">
+    <AdminLayout title="إدارة المشتركين في النشرة البريدية">
+      <main>
         {/* Search and Actions */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
           <div className="relative w-full md:w-64">
@@ -133,7 +130,7 @@ const AdminSubscribers = () => {
           </div>
         </div>
       </main>
-    </div>
+    </AdminLayout>
   );
 };
 
