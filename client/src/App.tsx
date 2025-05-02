@@ -39,6 +39,7 @@ import AdminHomeLayout from "@/pages/admin/home-layout";
 import AdminAppearance from "@/pages/admin/appearance";
 import AdminMessages from "@/pages/admin/messages";
 import CreateSuccessStory from "@/pages/admin/create-success-story";
+import EditSuccessStory from "@/pages/admin/edit-success-story";
 
 import Header from "@/components/header";
 import Footer from "@/components/footer";

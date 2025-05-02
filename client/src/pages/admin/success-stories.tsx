@@ -3,63 +3,40 @@ import { useLocation } from 'wouter';
 import { Trophy, PlusCircle, Edit, Trash2, Search, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { useSuccessStories } from '@/hooks/use-success-stories';
 import AdminLayout from '@/components/admin/admin-layout';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { SuccessStory } from '@shared/schema';
 
 const AdminSuccessStories = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [, setLocation] = useLocation();
-  const queryClient = useQueryClient();
   
-  // Use our hooks to get actual data
-  const { successStories, isLoading, error } = useSuccessStories();
+  // استخدام الهوك المحدث للحصول على قصص النجاح والوظائف المرتبطة بها
+  const { 
+    successStories, 
+    isLoading, 
+    error,
+    deleteSuccessStory,
+    updateSuccessStoryStatus
+  } = useSuccessStories();
 
-  // Create a delete mutation
-  const deleteStoryMutation = useMutation({
-    mutationFn: (id: number) => {
-      return apiRequest(`/api/success-stories/${id}`, {
-        method: 'DELETE',
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/success-stories'] });
-    },
-  });
-
-  // Create a publish/unpublish mutation
-  const togglePublishMutation = useMutation({
-    mutationFn: ({ id, isPublished }: { id: number; isPublished: boolean }) => {
-      return apiRequest(`/api/success-stories/${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ isPublished }),
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/success-stories'] });
-    },
-  });
-
-  // Handle story deletion
+  // التعامل مع حذف قصة نجاح
   const handleDelete = (id: number, name: string) => {
     if (window.confirm(`هل أنت متأكد من حذف قصة "${name}"؟`)) {
-      deleteStoryMutation.mutate(id);
+      deleteSuccessStory(id);
     }
   };
 
-  // Toggle publish status
-  const togglePublish = (id: number, currentStatus: boolean | undefined) => {
-    // Set to true if undefined or false, and false if true
-    const newStatus = !(currentStatus === true);
-    togglePublishMutation.mutate({ id, isPublished: newStatus });
+  // تبديل حالة النشر
+  const togglePublish = (id: number, currentStatus: boolean) => {
+    // تعيين القيمة العكسية للحالة الحالية
+    const newStatus = !currentStatus;
+    updateSuccessStoryStatus(id, newStatus);
   };
 
-  // Handle navigation to create page
+  // الانتقال إلى صفحة إنشاء قصة جديدة
   const handleAddNew = () => {
     setLocation('/admin/success-stories/create');
   };
 
-  // Filter success stories
+  // تصفية قصص النجاح بناءً على مصطلح البحث
   const filteredSuccessStories = Array.isArray(successStories) 
     ? successStories.filter(story => 
         story.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -67,7 +44,7 @@ const AdminSuccessStories = () => {
       )
     : [];
 
-  // Actions for AdminLayout header
+  // زر إضافة قصة جديدة في رأس الصفحة
   const actions = (
     <button 
       onClick={handleAddNew}
@@ -78,21 +55,16 @@ const AdminSuccessStories = () => {
     </button>
   );
 
-  // Helper function to determine if a story is published
-  const isStoryPublished = (story: any) => {
-    return story.isPublished === true;
-  };
-
-  // Count published and draft stories
+  // عد القصص المنشورة والمسودات
   const publishedCount = Array.isArray(successStories) 
-    ? successStories.filter(story => isStoryPublished(story)).length 
+    ? successStories.filter(story => story.isPublished === true).length 
     : 0;
   
   const draftCount = Array.isArray(successStories) 
-    ? successStories.filter(story => !isStoryPublished(story)).length 
+    ? successStories.filter(story => story.isPublished !== true).length 
     : 0;
 
-  // Error handling
+  // معالجة الأخطاء
   if (error) {
     return (
       <AdminLayout title="إدارة قصص النجاح" actions={actions}>
@@ -120,9 +92,9 @@ const AdminSuccessStories = () => {
         </div>
       </div>
 
-      {/* Success Stories Table */}
+      {/* جدول قصص النجاح */}
       <div className="bg-white shadow-sm rounded-lg overflow-hidden">
-        {isLoading || deleteStoryMutation.isPending || togglePublishMutation.isPending ? (
+        {isLoading ? (
           <div className="p-8 text-center">
             <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>
             <p className="mt-4">جاري تحميل البيانات...</p>
@@ -153,7 +125,7 @@ const AdminSuccessStories = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredSuccessStories.map((story: any, index) => (
+                {filteredSuccessStories.map((story, index) => (
                   <tr key={story.id} className="border-b hover:bg-gray-50">
                     <td className="px-6 py-4 font-medium text-gray-900">{index + 1}</td>
                     <td className="px-6 py-4">{story.name}</td>
@@ -166,14 +138,14 @@ const AdminSuccessStories = () => {
                     </td>
                     <td className="px-6 py-4">
                       <button
-                        onClick={() => togglePublish(story.id, isStoryPublished(story))}
+                        onClick={() => togglePublish(story.id, !!story.isPublished)}
                         className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${
-                          isStoryPublished(story) 
+                          story.isPublished 
                             ? 'bg-green-100 text-green-700 hover:bg-green-200' 
                             : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
                         }`}
                       >
-                        {isStoryPublished(story) ? (
+                        {story.isPublished ? (
                           <>
                             <CheckCircle className="h-3.5 w-3.5" />
                             <span>منشور</span>
@@ -212,7 +184,7 @@ const AdminSuccessStories = () => {
         )}
       </div>
 
-      {/* Stats Boxes */}
+      {/* إحصائيات */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="flex items-center justify-between">

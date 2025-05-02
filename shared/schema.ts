@@ -128,6 +128,7 @@ export const successStories = pgTable("success_stories", {
   content: text("content").notNull(),
   scholarshipName: text("scholarship_name"),
   imageUrl: text("image_url"),
+  isPublished: boolean("is_published").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
