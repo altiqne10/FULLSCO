@@ -394,14 +394,21 @@ export default function CreatePostPage() {
       const tagIds = postTags.map(tag => tag.id) || [];
       console.log("تصنيفات المقال:", tagIds);
       
+      // تجهيز المحتوى بشكل صحيح (التعامل مع القيم null أو undefined)
+      let safeContent = '';
+      if (postData.content !== null && postData.content !== undefined) {
+        safeContent = postData.content;
+      }
+      
+      console.log("المحتوى الآمن المجهز للمحرر:", safeContent);
+      
       // تحميل القيم في النموذج بشكل كامل
       form.reset({
         title: postData.title || '',
         slug: postData.slug || '',
         excerpt: postData.excerpt || '',
-        // نتأكد من أن محتوى المقال ليس فارغًا
-        content: postData.content || '',
-        isPublished: postData.isPublished || true,
+        content: safeContent,
+        isPublished: postData.isPublished ?? true,
         seoTitle: postData.seoTitle || '',
         seoDescription: postData.seoDescription || '',
         seoKeywords: postData.seoKeywords || '',
@@ -410,9 +417,14 @@ export default function CreatePostPage() {
         featuredImage: postData.imageUrl || '',
       });
 
+      // تحديث المحتوى بشكل منفصل للتأكد من تعبئته بشكل صحيح
+      setTimeout(() => {
+        form.setValue('content', safeContent);
+        console.log("تم تحديث المحتوى في النموذج:", form.getValues('content'));
+      }, 100);
+
       // طباعة قيم النموذج بعد التحميل للتأكد
       console.log("قيم النموذج بعد التحميل:", form.getValues());
-      console.log("المحتوى المحمل في النموذج:", form.getValues('content'));
     }
   }, [postData, postTags, isEditMode, form]);
   
@@ -555,8 +567,11 @@ export default function CreatePostPage() {
                           <FormLabel>محتوى المقال</FormLabel>
                           <FormControl>
                             <RichEditor
-                              initialValue={field.value}
-                              onChange={field.onChange}
+                              initialValue={field.value || (postData?.content || '')}
+                              onChange={(html) => {
+                                console.log("تغيير المحتوى:", html);
+                                field.onChange(html);
+                              }}
                               placeholder="اكتب محتوى المقال..."
                               height={500}
                               dir="rtl"
@@ -568,6 +583,7 @@ export default function CreatePostPage() {
                               onSeoKeywordsChange={(keywords) => form.setValue('seoKeywords', keywords)}
                               focusKeyword={form.getValues('focusKeyword') || ''}
                               onFocusKeywordChange={(keyword) => form.setValue('focusKeyword', keyword)}
+                              className="post-editor"
                             />
                           </FormControl>
                           <FormMessage />

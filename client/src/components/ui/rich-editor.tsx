@@ -218,11 +218,41 @@ export default function RichEditor({
   
   // عند تغيير القيمة الأولية، نقوم بتحديث المحرر
   React.useEffect(() => {
-    if (editor && initialValue !== null && initialValue !== undefined) {
+    if (editor) {
+      // تجهيز قيمة آمنة للمحتوى
+      const safeValue = initialValue !== null && initialValue !== undefined ? initialValue : '';
       // تحقق من أن المحتوى الحالي مختلف عن المحتوى الجديد
       const currentContent = editor.getHTML();
-      if (currentContent !== initialValue && initialValue.trim() !== '') {
-        console.log("تحديث محتوى المحرر من القيمة الأولية:", initialValue);
+      
+      console.log("-> محاولة تحديث المحرر:", {
+        currentContent,
+        newContent: safeValue,
+        isDifferent: currentContent !== safeValue
+      });
+      
+      if (currentContent !== safeValue) {
+        console.log("تحديث محتوى المحرر من القيمة الأولية:", safeValue);
+        // تأخير قليل لضمان استقرار المحرر
+        setTimeout(() => {
+          if (editor) {
+            editor.commands.setContent(safeValue);
+            console.log("تم تحديث محتوى المحرر");
+          }
+        }, 50);
+      }
+    }
+  }, [editor, initialValue]);
+  
+  // نقوم بإعادة تحميل المحتوى إذا تغير بشكل كبير
+  React.useEffect(() => {
+    if (editor && initialValue && initialValue.length > 20) {
+      const currentContent = editor.getHTML();
+      // إذا كان الفرق كبيرًا وليس مجرد تنسيق بسيط
+      if (Math.abs(currentContent.length - initialValue.length) > 50) {
+        console.log("فرق كبير في المحتوى - إعادة تحميل:", {
+          currentLength: currentContent.length,
+          newLength: initialValue.length
+        });
         editor.commands.setContent(initialValue);
       }
     }
