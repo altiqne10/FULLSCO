@@ -74,8 +74,8 @@ export default function RichEditor({
   const [seoAnalysis, setSeoAnalysis] = useState<Array<{text: string, status: 'good' | 'warning' | 'bad', score: number}>>([]);
   const [readabilityAnalysis, setReadabilityAnalysis] = useState<Array<{text: string, status: 'good' | 'warning' | 'bad', score: number}>>([]);
   
-  // القيمة من البيئة (في Vite نستخدم import.meta.env)
-  const apiKey = import.meta.env.VITE_TINYMCE_API_KEY || 'no-api-key';
+  // يمكن استخدام المفتاح المخزن في متغيرات البيئة
+  const apiKey = 'zxu5jgj7pezp6ynprlvz57e3jbj2acfcnbemx0vhm0cdcl1i';
   
   // التغييرات في المحتوى
   const handleEditorChange = (newContent: string) => {
