@@ -14,7 +14,10 @@ import {
   insertSeoSettingsSchema,
   insertSiteSettingsSchema,
   insertPageSchema,
-  User
+  insertMenuSchema,
+  insertMenuItemSchema,
+  User,
+  menuLocationEnum
 } from "@shared/schema";
 import session from "express-session";
 import passport from "passport";
@@ -1061,6 +1064,235 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).end();
     } catch (error) {
       res.status(500).json({ message: (error as Error).message });
+    }
+  });
+
+  // Menu Routes
+  app.post("/api/menus", isAdmin, async (req, res) => {
+    try {
+      const data = insertMenuSchema.parse(req.body);
+      const menu = await storage.createMenu(data);
+      res.status(201).json(menu);
+    } catch (error) {
+      console.error("Error creating menu:", error);
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.get("/api/menus", async (req, res) => {
+    try {
+      const menus = await storage.listMenus();
+      res.json(menus);
+    } catch (error) {
+      console.error("Error fetching menus:", error);
+      res.status(500).json({ message: "Failed to fetch menus", error: (error as Error).message });
+    }
+  });
+
+  app.get("/api/menus/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid menu ID" });
+      }
+      const menu = await storage.getMenu(id);
+      if (!menu) {
+        return res.status(404).json({ message: "Menu not found" });
+      }
+      res.json(menu);
+    } catch (error) {
+      console.error("Error fetching menu:", error);
+      res.status(500).json({ message: "Failed to fetch menu", error: (error as Error).message });
+    }
+  });
+
+  app.get("/api/menus/location/:location", async (req, res) => {
+    try {
+      const location = req.params.location;
+      if (!["header", "footer", "sidebar", "mobile"].includes(location)) {
+        return res.status(400).json({ message: "Invalid menu location" });
+      }
+      const menu = await storage.getMenuByLocation(location);
+      if (!menu) {
+        return res.status(404).json({ message: "Menu not found for this location" });
+      }
+      res.json(menu);
+    } catch (error) {
+      console.error("Error fetching menu by location:", error);
+      res.status(500).json({ message: "Failed to fetch menu", error: (error as Error).message });
+    }
+  });
+
+  app.get("/api/menus/slug/:slug", async (req, res) => {
+    try {
+      const slug = req.params.slug;
+      const menu = await storage.getMenuBySlug(slug);
+      if (!menu) {
+        return res.status(404).json({ message: "Menu not found" });
+      }
+      res.json(menu);
+    } catch (error) {
+      console.error("Error fetching menu by slug:", error);
+      res.status(500).json({ message: "Failed to fetch menu", error: (error as Error).message });
+    }
+  });
+
+  app.get("/api/menu-structure/:location", async (req, res) => {
+    try {
+      const location = req.params.location;
+      if (!["header", "footer", "sidebar", "mobile"].includes(location)) {
+        return res.status(400).json({ message: "Invalid menu location" });
+      }
+      const structure = await storage.getMenuStructure(location);
+      if (!structure) {
+        return res.status(404).json({ message: "Menu structure not found for this location" });
+      }
+      res.json(structure);
+    } catch (error) {
+      console.error("Error fetching menu structure:", error);
+      res.status(500).json({ message: "Failed to fetch menu structure", error: (error as Error).message });
+    }
+  });
+
+  app.put("/api/menus/:id", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid menu ID" });
+      }
+      const data = insertMenuSchema.partial().parse(req.body);
+      const menu = await storage.updateMenu(id, data);
+      if (!menu) {
+        return res.status(404).json({ message: "Menu not found" });
+      }
+      res.json(menu);
+    } catch (error) {
+      console.error("Error updating menu:", error);
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.delete("/api/menus/:id", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid menu ID" });
+      }
+      const success = await storage.deleteMenu(id);
+      if (!success) {
+        return res.status(404).json({ message: "Menu not found" });
+      }
+      res.json({ message: "Menu deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting menu:", error);
+      res.status(500).json({ message: "Failed to delete menu", error: (error as Error).message });
+    }
+  });
+
+  // Menu Item Routes
+  app.post("/api/menu-items", isAdmin, async (req, res) => {
+    try {
+      const data = insertMenuItemSchema.parse(req.body);
+      const menuItem = await storage.createMenuItem(data);
+      res.status(201).json(menuItem);
+    } catch (error) {
+      console.error("Error creating menu item:", error);
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.get("/api/menu-items/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid menu item ID" });
+      }
+      const menuItem = await storage.getMenuItem(id);
+      if (!menuItem) {
+        return res.status(404).json({ message: "Menu item not found" });
+      }
+      res.json(menuItem);
+    } catch (error) {
+      console.error("Error fetching menu item:", error);
+      res.status(500).json({ message: "Failed to fetch menu item", error: (error as Error).message });
+    }
+  });
+
+  app.get("/api/menu-items/menu/:menuId", async (req, res) => {
+    try {
+      const menuId = parseInt(req.params.menuId);
+      if (isNaN(menuId)) {
+        return res.status(400).json({ message: "Invalid menu ID" });
+      }
+      
+      let parentId: number | null | undefined = undefined;
+      if (req.query.parentId !== undefined) {
+        if (req.query.parentId === 'null') {
+          parentId = null;
+        } else {
+          const parsedParentId = parseInt(req.query.parentId as string);
+          if (!isNaN(parsedParentId)) {
+            parentId = parsedParentId;
+          } else {
+            return res.status(400).json({ message: "Invalid parent ID" });
+          }
+        }
+      }
+      
+      const menuItems = await storage.listMenuItems(menuId, parentId);
+      res.json(menuItems);
+    } catch (error) {
+      console.error("Error fetching menu items:", error);
+      res.status(500).json({ message: "Failed to fetch menu items", error: (error as Error).message });
+    }
+  });
+
+  app.get("/api/menu-items-with-details/menu/:menuId", async (req, res) => {
+    try {
+      const menuId = parseInt(req.params.menuId);
+      if (isNaN(menuId)) {
+        return res.status(400).json({ message: "Invalid menu ID" });
+      }
+      const menuItems = await storage.getAllMenuItemsWithDetails(menuId);
+      res.json(menuItems);
+    } catch (error) {
+      console.error("Error fetching menu items with details:", error);
+      res.status(500).json({ message: "Failed to fetch menu items with details", error: (error as Error).message });
+    }
+  });
+
+  app.put("/api/menu-items/:id", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid menu item ID" });
+      }
+      const data = insertMenuItemSchema.partial().parse(req.body);
+      const menuItem = await storage.updateMenuItem(id, data);
+      if (!menuItem) {
+        return res.status(404).json({ message: "Menu item not found" });
+      }
+      res.json(menuItem);
+    } catch (error) {
+      console.error("Error updating menu item:", error);
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.delete("/api/menu-items/:id", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid menu item ID" });
+      }
+      const success = await storage.deleteMenuItem(id);
+      if (!success) {
+        return res.status(404).json({ message: "Menu item not found" });
+      }
+      res.json({ message: "Menu item deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting menu item:", error);
+      res.status(500).json({ message: "Failed to delete menu item", error: (error as Error).message });
     }
   });
 

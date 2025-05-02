@@ -570,4 +570,166 @@ export class DatabaseStorage implements IStorage {
     
     return {};
   }
+
+  // Menu operations
+  async getMenu(id: number): Promise<Menu | undefined> {
+    const [menu] = await db.select().from(menus).where(eq(menus.id, id));
+    return menu;
+  }
+
+  async getMenuBySlug(slug: string): Promise<Menu | undefined> {
+    const [menu] = await db.select().from(menus).where(eq(menus.slug, slug));
+    return menu;
+  }
+
+  async getMenuByLocation(location: string): Promise<Menu | undefined> {
+    const [menu] = await db.select().from(menus)
+      .where(and(
+        eq(menus.location, location as any),
+        eq(menus.isActive, true)
+      ));
+    return menu;
+  }
+
+  async createMenu(menu: InsertMenu): Promise<Menu> {
+    const [newMenu] = await db.insert(menus).values(menu).returning();
+    return newMenu;
+  }
+
+  async updateMenu(id: number, menu: Partial<InsertMenu>): Promise<Menu | undefined> {
+    const [updatedMenu] = await db.update(menus).set(menu).where(eq(menus.id, id)).returning();
+    return updatedMenu;
+  }
+
+  async deleteMenu(id: number): Promise<boolean> {
+    await db.delete(menus).where(eq(menus.id, id));
+    return true;
+  }
+
+  async listMenus(): Promise<Menu[]> {
+    return await db.select().from(menus);
+  }
+
+  // Menu Item operations
+  async getMenuItem(id: number): Promise<MenuItem | undefined> {
+    const [menuItem] = await db.select().from(menuItems).where(eq(menuItems.id, id));
+    return menuItem;
+  }
+
+  async createMenuItem(item: InsertMenuItem): Promise<MenuItem> {
+    const [newItem] = await db.insert(menuItems).values(item).returning();
+    return newItem;
+  }
+
+  async updateMenuItem(id: number, item: Partial<InsertMenuItem>): Promise<MenuItem | undefined> {
+    const [updatedItem] = await db.update(menuItems).set(item).where(eq(menuItems.id, id)).returning();
+    return updatedItem;
+  }
+
+  async deleteMenuItem(id: number): Promise<boolean> {
+    await db.delete(menuItems).where(eq(menuItems.id, id));
+    return true;
+  }
+
+  async listMenuItems(menuId: number, parentId?: number | null): Promise<MenuItem[]> {
+    let query = db.select().from(menuItems)
+      .where(eq(menuItems.menuId, menuId))
+      .orderBy(menuItems.order);
+    
+    if (parentId !== undefined) {
+      if (parentId === null) {
+        query = query.where(sql`${menuItems.parentId} IS NULL`);
+      } else {
+        query = query.where(eq(menuItems.parentId, parentId));
+      }
+    }
+    
+    return await query;
+  }
+
+  async getAllMenuItemsWithDetails(menuId: number): Promise<any[]> {
+    // Get basic menu items
+    const items = await this.listMenuItems(menuId);
+    const enrichedItems = [];
+    
+    // Enrich each menu item with its related entity details
+    for (const item of items) {
+      const enrichedItem = { ...item, entity: null };
+      
+      switch (item.type) {
+        case 'page':
+          if (item.pageId) {
+            enrichedItem.entity = await this.getPage(item.pageId);
+          }
+          break;
+        case 'category':
+          if (item.categoryId) {
+            enrichedItem.entity = await this.getCategory(item.categoryId);
+          }
+          break;
+        case 'level':
+          if (item.levelId) {
+            enrichedItem.entity = await this.getLevel(item.levelId);
+          }
+          break;
+        case 'country':
+          if (item.countryId) {
+            enrichedItem.entity = await this.getCountry(item.countryId);
+          }
+          break;
+        case 'scholarship':
+          if (item.scholarshipId) {
+            enrichedItem.entity = await this.getScholarship(item.scholarshipId);
+          }
+          break;
+        case 'post':
+          if (item.postId) {
+            enrichedItem.entity = await this.getPost(item.postId);
+          }
+          break;
+      }
+      
+      // If this item has children, get them recursively
+      if (item.id) {
+        const children = await this.listMenuItems(menuId, item.id);
+        if (children.length > 0) {
+          enrichedItem.children = children;
+        }
+      }
+      
+      enrichedItems.push(enrichedItem);
+    }
+    
+    return enrichedItems;
+  }
+
+  async getMenuStructure(location: string): Promise<any> {
+    const menu = await this.getMenuByLocation(location);
+    if (!menu) return null;
+    
+    const rootItems = await this.listMenuItems(menu.id, null);
+    const structure = {
+      id: menu.id,
+      name: menu.name,
+      slug: menu.slug,
+      location: menu.location,
+      items: []
+    };
+    
+    for (const rootItem of rootItems) {
+      const item: any = { ...rootItem, children: [] };
+      
+      if (rootItem.id) {
+        const children = await this.listMenuItems(menu.id, rootItem.id);
+        
+        for (const child of children) {
+          item.children.push(child);
+        }
+      }
+      
+      structure.items.push(item);
+    }
+    
+    return structure;
+  }
 }
