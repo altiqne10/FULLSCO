@@ -10,7 +10,7 @@ import TextStyle from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
 import Typography from '@tiptap/extension-typography';
-// import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+
 import CharacterCount from '@tiptap/extension-character-count';
 import Heading from '@tiptap/extension-heading';
 import Table from '@tiptap/extension-table';
@@ -131,7 +131,6 @@ export default function RichEditor({
     extensions: [
       StarterKit.configure({
         heading: false, // we'll configure it separately
-        codeBlock: false, // we'll use CodeBlockLowlight instead
       }),
       Placeholder.configure({
         placeholder,
@@ -172,9 +171,6 @@ export default function RichEditor({
       TableRow,
       TableHeader,
       TableCell,
-      CodeBlockLowlight.configure({
-        lowlight,
-      }),
     ],
     editorProps: {
       attributes: {
@@ -963,8 +959,8 @@ export default function RichEditor({
                       <Button 
                         variant="ghost" 
                         size="icon"
-                        className={`h-8 w-8 ${editor.isActive('codeBlock') ? 'bg-accent' : ''}`}
-                        onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+                        className={`h-8 w-8 ${editor.isActive('code') ? 'bg-accent' : ''}`}
+                        onClick={() => editor.chain().focus().toggleCode().run()}
                         disabled={readOnly}
                       >
                         <Code className="h-4 w-4" />
