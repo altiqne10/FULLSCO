@@ -3,7 +3,7 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useLocation } from 'wouter';
+import { useLocation, useParams } from 'wouter';
 import AdminLayout from '@/components/admin/admin-layout';
 import RichEditor from '@/components/ui/rich-editor';
 import { useToast } from '@/hooks/use-toast';
@@ -98,6 +98,9 @@ type PostFormValues = z.infer<typeof postFormSchema>;
 export default function CreatePostPage() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const params = useParams();
+  const postId = params?.id ? parseInt(params.id) : null;
+  const isEditMode = !!postId;
   const queryClient = useQueryClient();
   const [showExitAlert, setShowExitAlert] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -105,6 +108,54 @@ export default function CreatePostPage() {
   const [showAddTagDialog, setShowAddTagDialog] = useState(false);
   const isMobile = useIsMobile();
   
+  // تعريف نوع البيانات للمقال
+  type PostData = {
+    id: number;
+    title: string;
+    slug: string;
+    excerpt: string;
+    content: string | null;
+    isPublished: boolean;
+    isFeatured: boolean;
+    views: number;
+    seoTitle: string | null;
+    seoDescription: string | null;
+    seoKeywords: string | null;
+    focusKeyword: string | null;
+    imageUrl: string | null;
+    authorId: number;
+    createdAt: string;
+    updatedAt: string;
+  };
+
+  // استعلام عن بيانات المقال عند التعديل
+  const { data: postData, isLoading: isLoadingPost } = useQuery<PostData>({
+    queryKey: ['/api/posts', postId],
+    queryFn: async () => {
+      if (!postId) return Promise.reject('No post ID provided');
+      console.log('Fetching post with ID:', postId);
+      
+      try {
+        const response = await fetch(`/api/posts/${postId}`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Error loading post:', errorData);
+          throw new Error(errorData.message || 'فشل في استلام بيانات المقال');
+        }
+        const data = await response.json();
+        console.log('Post data loaded:', data);
+        return data;
+      } catch (error) {
+        console.error('Failed to fetch post:', error);
+        throw error;
+      }
+    },
+    enabled: !!postId, // تفعيل الاستعلام فقط عند وجود معرف المقال
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    gcTime: 0,
+  });
+
   // استعلام عن التصنيفات
   const { data: tags = [] } = useQuery<any[]>({
     queryKey: ['/api/tags'],
@@ -201,10 +252,57 @@ export default function CreatePostPage() {
     },
   });
   
+  // تحديث مقال موجود
+  const updatePostMutation = useMutation({
+    mutationFn: async (postData: PostFormValues) => {
+      if (!postId) throw new Error('معرف المقال غير موجود');
+      
+      console.log("بيانات المقال قبل الإرسال:", postData);
+      console.log("محتوى المقال:", postData.content);
+      
+      const response = await fetch(`/api/posts/${postId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(postData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("خطأ في تحديث المقال:", errorData);
+        throw new Error(errorData.message || 'فشل في تحديث المقال');
+      }
+      
+      const responseData = await response.json();
+      console.log("تم تحديث المقال بنجاح:", responseData);
+      return responseData;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/posts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/posts', postId] });
+      toast({
+        title: 'تم تحديث المقال بنجاح',
+        description: 'تم تحديث بيانات المقال',
+      });
+      navigate('/admin/posts');
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'خطأ',
+        description: `فشل في تحديث المقال: ${error.message}`,
+        variant: 'destructive',
+      });
+      setIsSubmitting(false);
+    }
+  });
+
   // معالجة تقديم النموذج
   const onSubmit = (data: PostFormValues) => {
     setIsSubmitting(true);
-    addPostMutation.mutate(data);
+    if (isEditMode) {
+      updatePostMutation.mutate(data);
+    } else {
+      addPostMutation.mutate(data);
+    }
   };
   
   // إنشاء slug من العنوان
@@ -267,6 +365,31 @@ export default function CreatePostPage() {
     }
   };
   
+  // تحميل بيانات المقال عند التعديل
+  useEffect(() => {
+    if (postData && isEditMode) {
+      console.log("تحميل بيانات المقال للتعديل:", postData);
+      console.log("محتوى المقال:", postData.content);
+      
+      // استخراج تصنيفات المقال (مثال افتراضي، يجب تعديله وفقًا للبيانات الحقيقية)
+      const postTags: number[] = []; // يمكن استرجاع هذه من الAPI
+      
+      form.reset({
+        title: postData.title || '',
+        slug: postData.slug || '',
+        excerpt: postData.excerpt || '',
+        content: postData.content || '',
+        isPublished: postData.isPublished || true,
+        seoTitle: postData.seoTitle || '',
+        seoDescription: postData.seoDescription || '',
+        seoKeywords: postData.seoKeywords || '',
+        focusKeyword: postData.focusKeyword || '',
+        selectedTags: postTags,
+        featuredImage: postData.imageUrl || '',
+      });
+    }
+  }, [postData, isEditMode, form]);
+  
   // محتوى الصفحة
   const pageActions = (
     <div className="flex items-center gap-2">
@@ -301,7 +424,7 @@ export default function CreatePostPage() {
   );
 
   return (
-    <AdminLayout title="إضافة مقال جديد" actions={pageActions}>
+    <AdminLayout title={isEditMode ? "تعديل المقال" : "إضافة مقال جديد"} actions={pageActions}>
       <div className="mb-6">
         <Button
           variant="ghost"
