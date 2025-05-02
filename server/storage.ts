@@ -96,7 +96,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(categories)
       .where(eq(categories.id, id));
-    return result.rowCount > 0;
+    return result.rowCount !== null && result.rowCount > 0;
   }
 
   // Post operations
@@ -164,7 +164,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(posts)
       .where(eq(posts.id, id));
-    return result.rowCount > 0;
+    return result.rowCount !== null && result.rowCount > 0;
   }
 
   // Comment operations
@@ -188,7 +188,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(comments)
       .where(eq(comments.id, id));
-    return result.rowCount > 0;
+    return result.rowCount !== null && result.rowCount > 0;
   }
 }
 

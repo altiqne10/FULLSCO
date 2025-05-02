@@ -57,7 +57,7 @@ export default function PostEditor({
   onDelete,
   submitLabel = "Save Post" 
 }: PostEditorProps) {
-  const [imagePreview, setImagePreview] = useState<string | undefined>(post.featuredImage);
+  const [imagePreview, setImagePreview] = useState<string | undefined>(post.featuredImage || undefined);
   const editorRef = useRef<any>(null);
   
   const form = useForm<PostFormValues>({
@@ -66,9 +66,9 @@ export default function PostEditor({
       title: post.title || "",
       excerpt: post.excerpt || "",
       content: post.content || "",
-      categoryId: post.categoryId,
-      status: post.status as "published" | "draft" || "draft",
-      featuredImage: post.featuredImage,
+      categoryId: post.categoryId || undefined,
+      status: (post.status as "published" | "draft") || "draft",
+      featuredImage: post.featuredImage || undefined,
     }
   });
   
@@ -180,7 +180,7 @@ export default function PostEditor({
                     <div className="min-h-[300px] border border-gray-300 rounded-lg">
                       <Editor
                         apiKey="q471jgf8f3tf021wog7g5ja3spibypjg739h8z86gbz2fi6h"
-                        onInit={(evt, editor) => {
+                        onInit={(evt: any, editor: any) => {
                           editorRef.current = editor;
                         }}
                         initialValue={field.value}
@@ -195,7 +195,7 @@ export default function PostEditor({
                           toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
                           content_style: 'body { font-family:Inter,Arial,sans-serif; font-size:16px }',
                           skin: 'oxide',
-                          setup: function(editor) {
+                          setup: function(editor: any) {
                             editor.on('change', function() {
                               field.onChange(editor.getContent());
                             });
