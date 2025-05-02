@@ -471,7 +471,7 @@ export default function RichEditor({
           
           <Editor
             apiKey={apiKey}
-            onInit={(evt, editor) => editorRef.current = editor}
+            onInit={(evt: any, editor: any) => editorRef.current = editor}
             initialValue={initialValue}
             value={content}
             onEditorChange={handleEditorChange}
@@ -498,12 +498,12 @@ export default function RichEditor({
               placeholder: placeholder,
               readonly: readOnly,
               block_formats: 'Paragraph=p; Heading 1=h1; Heading 2=h2; Heading 3=h3; Heading 4=h4; Heading 5=h5; Heading 6=h6;',
-              setup: (editor) => {
-                editor.on('WordCountUpdate', function(e) {
+              setup: (editor: any) => {
+                editor.on('WordCountUpdate', function(e: any) {
                   setWordCount(e.wordCount);
                 });
               },
-              images_upload_handler: (blobInfo, progress) => new Promise((resolve, reject) => {
+              images_upload_handler: (blobInfo: any, progress: any) => new Promise((resolve, reject) => {
                 // هنا يمكن إضافة منطق رفع الصور إلى الخادم
                 const reader = new FileReader();
                 reader.onload = () => {

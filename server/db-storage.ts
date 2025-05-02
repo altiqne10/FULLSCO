@@ -55,10 +55,10 @@ export class DatabaseStorage implements IStorage {
       WHERE email = ${email}
     `);
     
-    if (result.rows.length === 0) return undefined;
+    if (result.length === 0) return undefined;
     
     // Convert the first row to User type
-    return result.rows[0] as User;
+    return result[0] as User;
   }
 
   async createUser(user: InsertUser): Promise<User> {
