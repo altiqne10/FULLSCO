@@ -1,14 +1,24 @@
 import { useQuery } from '@tanstack/react-query';
 import { Trophy, PlusCircle, Edit, Trash2, Search } from 'lucide-react';
 import { useState } from 'react';
+import { useSuccessStories } from '@/hooks/use-success-stories';
+
+// Define success story type
+type SuccessStory = {
+  id: number;
+  name: string;
+  title: string;
+  content: string;
+  scholarshipName?: string;
+  createdAt: string;
+  isPublished?: boolean;
+};
 
 const AdminSuccessStories = () => {
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Fetch success stories
-  const { data: successStories, isLoading } = useQuery({
-    queryKey: ['/api/success-stories'],
-  });
+  // Use our hooks/use-success-stories to get actual data
+  const { successStories, isLoading } = useSuccessStories();
 
   // Filter success stories
   const filteredSuccessStories = Array.isArray(successStories) 

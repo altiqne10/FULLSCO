@@ -38,6 +38,7 @@ import AdminSuccessStories from "@/pages/admin/success-stories";
 import AdminHomeLayout from "@/pages/admin/home-layout";
 import AdminAppearance from "@/pages/admin/appearance";
 import AdminMessages from "@/pages/admin/messages";
+import CreateSuccessStory from "@/pages/admin/create-success-story";
 
 import Header from "@/components/header";
 import Footer from "@/components/footer";
@@ -133,6 +134,7 @@ function App() {
                     {/* New Admin Routes */}
                     <Route path="/admin/subscribers" component={AdminSubscribers} />
                     <Route path="/admin/success-stories" component={AdminSuccessStories} />
+                    <Route path="/admin/success-stories/create" component={CreateSuccessStory} />
                     <Route path="/admin/home-layout" component={AdminHomeLayout} />
                     <Route path="/admin/appearance" component={AdminAppearance} />
                     <Route path="/admin/messages" component={AdminMessages} />
