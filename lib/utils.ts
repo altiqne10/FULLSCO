@@ -30,10 +30,38 @@ export function safeReduce<T, U>(arr: any, callback: (acc: U, val: T, index: num
 /**
  * وظيفة لتنسيق التواريخ بشكل آمن
  */
-export function formatDate(date: Date | string | null | undefined) {
-  if (!date) return null;
-  if (date instanceof Date) return date.toISOString();
-  return String(date);
+export function formatDate(date: Date | string | null | undefined): string | null {
+  // إذا كانت القيمة غير موجودة
+  if (date === null || date === undefined) return null;
+  
+  try {
+    // إذا كان تاريخًا
+    if (date instanceof Date) {
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid Date object received in formatDate');
+        return null;
+      }
+      return date.toISOString();
+    }
+    
+    // إذا كان نصًا
+    if (typeof date === 'string') {
+      // محاولة تحويله إلى تاريخ إذا كان صالحًا
+      const parsedDate = new Date(date);
+      if (!isNaN(parsedDate.getTime())) {
+        return parsedDate.toISOString();
+      }
+      // إذا لم يكن تاريخًا صالحًا، إعادة النص كما هو
+      return date;
+    }
+    
+    // في حالة أي نوع آخر، تحويله إلى نص
+    console.warn('Unexpected type received in formatDate:', typeof date);
+    return String(date);
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return null;
+  }
 }
 
 /**
