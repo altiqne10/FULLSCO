@@ -27,6 +27,7 @@ export default function ContactPage() {
   const [formStatus, setFormStatus] = useState<{
     success?: string;
     error?: string;
+    errorDetails?: Array<{ message: string; path: string[] }>;
   }>({});
   
   // تحديث حالة النموذج
@@ -69,10 +70,11 @@ export default function ContactPage() {
       } else {
         // عرض رسالة الخطأ من API
         setFormStatus({
-          error: result.error || 'حدث خطأ أثناء إرسال الرسالة. الرجاء المحاولة مرة أخرى.'
+          error: result.error || 'حدث خطأ أثناء إرسال الرسالة. الرجاء المحاولة مرة أخرى.',
+          errorDetails: result.details
         });
         
-        // إذا كان هناك تفاصيل للأخطاء، يمكن معالجتها هنا
+        // طباعة تفاصيل الأخطاء في وحدة التحكم للمساعدة في التصحيح
         console.error('Form validation errors:', result.details);
       }
     } catch (error) {
@@ -259,6 +261,15 @@ export default function ContactPage() {
                 {formStatus.error && (
                   <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300">
                     {formStatus.error}
+                    {formStatus.errorDetails && (
+                      <div className="mt-2 text-sm">
+                        <ul className="list-disc list-inside">
+                          {formStatus.errorDetails.map((detail, index) => (
+                            <li key={index}>{detail.message}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 )}
                 
