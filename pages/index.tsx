@@ -548,6 +548,7 @@ export default function HomePage({ categories, countries, featuredScholarships }
 
 export const getServerSideProps: GetServerSideProps = async () => {
   try {
+    console.log('Starting getServerSideProps...');
     // استيراد الوحدات اللازمة
     const { db } = await import('../db');
     const { sql, desc } = await import('drizzle-orm');
@@ -595,11 +596,11 @@ export const getServerSideProps: GetServerSideProps = async () => {
     const featuredScholarshipsPromises = featuredScholarshipsQuery.map(async (scholarship) => {
       // جلب التصنيف
       let category = null;
-      if (scholarship.category_id) {
+      if (scholarship.categoryId) {
         const [categoryData] = await db
           .select()
           .from(categories)
-          .where(sql`${categories.id} = ${scholarship.category_id}`);
+          .where(sql`${categories.id} = ${scholarship.categoryId}`);
         if (categoryData) {
           category = {
             id: categoryData.id,
@@ -611,11 +612,11 @@ export const getServerSideProps: GetServerSideProps = async () => {
 
       // جلب الدولة
       let country = null;
-      if (scholarship.country_id) {
+      if (scholarship.countryId) {
         const [countryData] = await db
           .select()
           .from(countries)
-          .where(sql`${countries.id} = ${scholarship.country_id}`);
+          .where(sql`${countries.id} = ${scholarship.countryId}`);
         if (countryData) {
           country = {
             id: countryData.id,
@@ -627,11 +628,11 @@ export const getServerSideProps: GetServerSideProps = async () => {
 
       // جلب المستوى الدراسي
       let level = null;
-      if (scholarship.level_id) {
+      if (scholarship.levelId) {
         const [levelData] = await db
           .select()
           .from(levels)
-          .where(sql`${levels.id} = ${scholarship.level_id}`);
+          .where(sql`${levels.id} = ${scholarship.levelId}`);
         if (levelData) {
           level = {
             id: levelData.id,
@@ -644,34 +645,57 @@ export const getServerSideProps: GetServerSideProps = async () => {
       // تحويل كائن المنحة إلى كائن قابل للتسلسل (JSON serializable)
       const { 
         id, title, slug, description, amount, currency, university, department, website,
-        is_featured, is_fully_funded, country_id, level_id, category_id, requirements,
-        application_link, image_url, content, seo_title, seo_description, seo_keywords,
-        focus_keyword, is_published
+        isFeatured, isFullyFunded, countryId, levelId, categoryId, requirements,
+        applicationLink, imageUrl, content, seoTitle, seoDescription, seoKeywords,
+        focusKeyword, isPublished
       } = scholarship;
       
-      // تحويل التواريخ إلى سلاسل نصية
-      const created_at = scholarship.created_at instanceof Date ? scholarship.created_at.toISOString() : 
-                        scholarship.created_at ? String(scholarship.created_at) : null;
-                        
-      const updated_at = scholarship.updated_at instanceof Date ? scholarship.updated_at.toISOString() : 
-                        scholarship.updated_at ? String(scholarship.updated_at) : null;
-                        
-      const start_date = scholarship.start_date instanceof Date ? scholarship.start_date.toISOString() : 
-                        scholarship.start_date ? String(scholarship.start_date) : null;
-                        
-      const end_date = scholarship.end_date instanceof Date ? scholarship.end_date.toISOString() : 
-                      scholarship.end_date ? String(scholarship.end_date) : null;
-                      
-      const deadline = scholarship.deadline instanceof Date ? scholarship.deadline.toISOString() : 
-                      scholarship.deadline ? String(scholarship.deadline) : null;
+      // تحويل التواريخ إلى سلاسل نصية لضمان أنها قابلة للتسلسل (JSON serializable)
+      const formatDate = (date: Date | string | null | undefined) => {
+        if (!date) return null;
+        if (date instanceof Date) return date.toISOString();
+        return String(date);
+      };
+      
+      const createdAtStr = formatDate(scholarship.createdAt);
+      const updatedAtStr = formatDate(scholarship.updatedAt);
+      const startDateStr = formatDate(scholarship.startDate);
+      const endDateStr = formatDate(scholarship.endDate);
+      const deadlineStr = formatDate(scholarship.deadline);
 
       // إرجاع كائن جديد مع جميع المعلومات المطلوبة
       return {
-        id, title, slug, description, amount, currency, university, department, website,
-        is_featured, is_fully_funded, country_id, level_id, category_id, requirements,
-        application_link, image_url, content, seo_title, seo_description, seo_keywords,
-        focus_keyword, is_published, created_at, updated_at, start_date, end_date, deadline,
-        category, country, level
+        id, 
+        title, 
+        slug, 
+        description, 
+        amount, 
+        currency, 
+        university, 
+        department, 
+        website,
+        isFeatured: scholarship.isFeatured, 
+        isFullyFunded: scholarship.isFullyFunded, 
+        countryId: scholarship.countryId, 
+        levelId: scholarship.levelId, 
+        categoryId: scholarship.categoryId, 
+        requirements: scholarship.requirements,
+        applicationLink: scholarship.applicationLink, 
+        imageUrl: scholarship.imageUrl, 
+        content, 
+        seoTitle: scholarship.seoTitle, 
+        seoDescription: scholarship.seoDescription, 
+        seoKeywords: scholarship.seoKeywords,
+        focusKeyword: scholarship.focusKeyword, 
+        isPublished: scholarship.isPublished, 
+        createdAt: createdAtStr, 
+        updatedAt: updatedAtStr, 
+        startDate: startDateStr, 
+        endDate: endDateStr, 
+        deadline: deadlineStr,
+        category, 
+        country, 
+        level
       };
     });
     
