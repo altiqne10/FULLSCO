@@ -463,11 +463,16 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
       };
     }
     
-    // استدعاء API لجلب تفاصيل المنحة 
-    // استخدام كائن URL بدلاً من التسلسل المباشر، مع ضمان التعامل السليم مع الأحرف العربية
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || '';
-    const apiUrl = new URL(`/api/scholarships/${encodeURIComponent(slug)}`, baseUrl.startsWith('http') ? baseUrl : `http://${baseUrl}`);
-    const response = await fetch(apiUrl.toString());
+    // استدعاء API لجلب تفاصيل المنحة
+    let host = '';
+    if (typeof window === 'undefined') {
+      // نحن في بيئة الخادم، ونستخدم عنوان محلي
+      host = 'http://localhost:5000';
+    }
+    
+    // تشكيل المسار مباشرة بدون الحاجة للـ URL constructor
+    const apiPath = `${host}/api/scholarships/${slug}`;
+    const response = await fetch(apiPath);
     
     if (!response.ok) {
       throw new Error(`حدث خطأ أثناء جلب تفاصيل المنحة: ${response.status}`);
