@@ -2,8 +2,10 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/404": "pages/404.js",
+  "/scholarships/[slug]": "pages/scholarships/[slug].js",
   "/": "pages/index.js",
-  "/api/site-settings": "pages/api/site-settings.js",
-  "/scholarships/[slug]": "pages/scholarships/[slug].js"
+  "/scholarships": "pages/scholarships.js",
+  "/api/scholarships": "pages/api/scholarships.js",
+  "/404": "pages/404.js",
+  "/api/site-settings": "pages/api/site-settings.js"
 }

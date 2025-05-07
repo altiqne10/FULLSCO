@@ -66,18 +66,18 @@ export default function ScholarshipsPage({
   const [isFiltersVisible, setIsFiltersVisible] = useState(false);
   
   // عنوان الصفحة
-  const title = initialFilters.search
+  const title = initialFilters?.search
     ? `نتائج البحث عن: ${initialFilters.search} | ${siteSettings?.siteName || 'FULLSCO'}`
-    : initialFilters.category
+    : initialFilters?.category
     ? `منح ${filterOptions.categories.find(c => c.slug === initialFilters.category)?.name || ''} | ${siteSettings?.siteName || 'FULLSCO'}`
-    : initialFilters.country
+    : initialFilters?.country
     ? `منح دراسية في ${filterOptions.countries.find(c => c.slug === initialFilters.country)?.name || ''} | ${siteSettings?.siteName || 'FULLSCO'}`
-    : initialFilters.level
+    : initialFilters?.level
     ? `منح ${filterOptions.levels.find(l => l.slug === initialFilters.level)?.name || ''} | ${siteSettings?.siteName || 'FULLSCO'}`
     : `المنح الدراسية | ${siteSettings?.siteName || 'FULLSCO'}`;
   
   // بناء وصف الصفحة
-  const description = initialFilters.search
+  const description = initialFilters?.search
     ? `نتائج البحث عن "${initialFilters.search}" في المنح الدراسية. اكتشف أفضل الفرص التعليمية المتاحة.`
     : 'اكتشف أحدث المنح الدراسية حول العالم. فرص تعليمية متنوعة للطلاب من مختلف التخصصات والمستويات الدراسية.';
   
@@ -98,13 +98,13 @@ export default function ScholarshipsPage({
         <div className="container">
           <div className="max-w-3xl mx-auto text-center mb-8">
             <h1 className="text-3xl md:text-4xl font-bold mb-4">
-              {initialFilters.search ? (
+              {initialFilters?.search ? (
                 <>نتائج البحث عن: <span className="text-primary">{initialFilters.search}</span></>
-              ) : initialFilters.category ? (
+              ) : initialFilters?.category ? (
                 <>منح <span className="text-primary">{filterOptions.categories.find(c => c.slug === initialFilters.category)?.name}</span></>
-              ) : initialFilters.country ? (
+              ) : initialFilters?.country ? (
                 <>منح دراسية في <span className="text-primary">{filterOptions.countries.find(c => c.slug === initialFilters.country)?.name}</span></>
-              ) : initialFilters.level ? (
+              ) : initialFilters?.level ? (
                 <>منح <span className="text-primary">{filterOptions.levels.find(l => l.slug === initialFilters.level)?.name}</span></>
               ) : (
                 'استكشف المنح الدراسية'
@@ -112,14 +112,14 @@ export default function ScholarshipsPage({
             </h1>
             
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              {initialFilters.search
+              {initialFilters?.search
                 ? `وجدنا ${pagination.total} نتيجة تطابق بحثك. استخدم أدوات التصفية لتحسين النتائج.`
                 : 'اكتشف أحدث المنح الدراسية المتاحة عالمياً واعثر على الفرصة المناسبة لك.'
               }
             </p>
             
             <SearchForm 
-              defaultQuery={initialFilters.search || ''}
+              defaultQuery={initialFilters?.search || ''}
               isSearchPage={true}
               className="max-w-2xl mx-auto"
             />
@@ -162,11 +162,11 @@ export default function ScholarshipsPage({
                 countries={filterOptions.countries}
                 levels={filterOptions.levels}
                 defaultValues={{
-                  category: initialFilters.category,
-                  country: initialFilters.country,
-                  level: initialFilters.level,
-                  fundingType: initialFilters.fundingType,
-                  sortBy: initialFilters.sortBy || 'newest'
+                  category: initialFilters?.category || undefined,
+                  country: initialFilters?.country || undefined,
+                  level: initialFilters?.level || undefined,
+                  fundingType: initialFilters?.fundingType || undefined,
+                  sortBy: initialFilters?.sortBy || 'newest'
                 }}
               />
             </div>
@@ -276,12 +276,12 @@ export const getServerSideProps: GetServerSideProps = async ({ query }) => {
           totalPages: 0
         },
         initialFilters: {
-          search,
-          category,
-          country,
-          level,
-          fundingType,
-          sortBy
+          search: search || null,
+          category: category || null,
+          country: country || null,
+          level: level || null,
+          fundingType: fundingType || null,
+          sortBy: sortBy || null
         }
       }
     };
@@ -303,7 +303,14 @@ export const getServerSideProps: GetServerSideProps = async ({ query }) => {
           limit: 10,
           totalPages: 0
         },
-        initialFilters: {}
+        initialFilters: {
+          search: null,
+          category: null,
+          country: null,
+          level: null,
+          fundingType: null,
+          sortBy: null
+        }
       }
     };
   }
