@@ -452,10 +452,16 @@ export default function ScholarshipDetailPage({
   );
 }
 
+// استيراد قاعدة البيانات والمخططات
+import { db } from '@/db';
+import { scholarships, categories, countries, levels } from '@/shared/schema';
+import { eq, sql } from 'drizzle-orm';
+
 // جلب البيانات من الخادم
 export const getServerSideProps: GetServerSideProps = async ({ params }) => {
   try {
     const slug = params?.slug as string;
+    console.log(`جلب بيانات المنحة مع slug: ${slug}`);
     
     if (!slug) {
       return {
@@ -463,35 +469,113 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
       };
     }
     
-    // استدعاء API لجلب تفاصيل المنحة
-    let host = '';
-    if (typeof window === 'undefined') {
-      // نحن في بيئة الخادم، ونستخدم عنوان محلي
-      host = 'http://localhost:5000';
-    }
+    // استخدام قاعدة البيانات مباشرة
+    // الحصول على المنحة الدراسية
+    const scholarshipData = await db.select().from(scholarships)
+      .where(eq(scholarships.slug, slug))
+      .limit(1);
     
-    // تشكيل المسار مباشرة بدون الحاجة للـ URL constructor
-    const apiPath = `${host}/api/scholarships/${encodeURIComponent(slug)}`;
-    console.log(`Fetching scholarship data from: ${apiPath}`);
-    const response = await fetch(apiPath);
-    
-    if (!response.ok) {
-      throw new Error(`حدث خطأ أثناء جلب تفاصيل المنحة: ${response.status}`);
-    }
-    
-    const data = await response.json();
+    console.log(`تم العثور على ${scholarshipData.length} منحة دراسية`);
     
     // التحقق من وجود المنحة
-    if (!data.scholarship) {
+    if (!scholarshipData || scholarshipData.length === 0) {
+      console.log(`لم يتم العثور على المنحة الدراسية: ${slug}`);
       return {
         notFound: true
       };
     }
     
+    const scholarship = scholarshipData[0];
+    console.log(`تم العثور على المنحة الدراسية بالعنوان: ${scholarship.title}`);
+    
+    // تحميل البيانات الإضافية
+    let categoryInfo = null;
+    if (scholarship.categoryId) {
+      const categoryData = await db.select().from(categories)
+        .where(eq(categories.id, scholarship.categoryId))
+        .limit(1);
+      
+      if (categoryData.length > 0) {
+        categoryInfo = categoryData[0];
+      }
+    }
+    
+    let countryInfo = null;
+    if (scholarship.countryId) {
+      const countryData = await db.select().from(countries)
+        .where(eq(countries.id, scholarship.countryId))
+        .limit(1);
+      
+      if (countryData.length > 0) {
+        countryInfo = countryData[0];
+      }
+    }
+    
+    let levelInfo = null;
+    if (scholarship.levelId) {
+      const levelData = await db.select().from(levels)
+        .where(eq(levels.id, scholarship.levelId))
+        .limit(1);
+      
+      if (levelData.length > 0) {
+        levelInfo = levelData[0];
+      }
+    }
+    
+    // الحصول على منح ذات صلة
+    let relatedScholarships = [];
+    
+    if (scholarship.categoryId) {
+      relatedScholarships = await db.select({
+        id: scholarships.id,
+        title: scholarships.title,
+        slug: scholarships.slug,
+        deadline: scholarships.deadline,
+        thumbnailUrl: scholarships.imageUrl,
+        isFeatured: scholarships.isFeatured
+      })
+      .from(scholarships)
+      .where(eq(scholarships.categoryId, scholarship.categoryId))
+      .where(sql`${scholarships.id} != ${scholarship.id}`)
+      .limit(3);
+    }
+    
+    // إذا لم يتم العثور على منح ذات صلة بناءً على الفئة
+    if (relatedScholarships.length === 0) {
+      relatedScholarships = await db.select({
+        id: scholarships.id,
+        title: scholarships.title,
+        slug: scholarships.slug,
+        deadline: scholarships.deadline,
+        thumbnailUrl: scholarships.imageUrl,
+        isFeatured: scholarships.isFeatured
+      })
+      .from(scholarships)
+      .where(sql`${scholarships.id} != ${scholarship.id}`)
+      .limit(3);
+    }
+    
+    // إعداد بيانات المنحة
+    const scholarshipWithRelations = {
+      ...scholarship,
+      thumbnailUrl: scholarship.imageUrl,
+      content: scholarship.content || scholarship.description,
+      category: categoryInfo,
+      country: countryInfo,
+      level: levelInfo
+    };
+    
+    // تنسيق التواريخ
+    const formattedScholarship = {
+      ...scholarshipWithRelations,
+      createdAt: scholarship.createdAt ? scholarship.createdAt.toISOString() : new Date().toISOString(),
+      updatedAt: scholarship.updatedAt ? scholarship.updatedAt.toISOString() : new Date().toISOString()
+    };
+    
     return {
       props: {
-        scholarship: data.scholarship,
-        relatedScholarships: data.relatedScholarships || []
+        scholarship: formattedScholarship,
+        relatedScholarships: relatedScholarships || []
       }
     };
   } catch (error) {
