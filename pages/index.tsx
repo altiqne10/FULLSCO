@@ -1,12 +1,65 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { GetServerSideProps } from 'next';
 import MainLayout from '../components/layout/MainLayout';
 import { useSiteSettings } from '../contexts/site-settings-context';
 import { ArrowRight, Search, GraduationCap, Globe, BookOpen, Award, ArrowDown } from 'lucide-react';
 
-export default function HomePage() {
+// تعريف أنواع البيانات
+interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string;
+  scholarshipCount?: number;
+}
+
+interface Country {
+  id: number;
+  name: string;
+  slug: string;
+  flagUrl?: string;
+  scholarshipCount?: number;
+}
+
+interface Scholarship {
+  id: number;
+  title: string;
+  slug: string;
+  description?: string;
+  image_url?: string;
+  deadline?: string;
+  amount?: string;
+  currency?: string;
+  university?: string;
+  is_featured?: boolean;
+  is_fully_funded?: boolean;
+  country_id?: number;
+  level_id?: number;
+  category_id?: number;
+  country?: { id: number; name: string; slug: string; };
+  category?: { id: number; name: string; slug: string; };
+  level?: { id: number; name: string; slug: string; };
+}
+
+interface HomePageProps {
+  categories: Category[];
+  countries: Country[];
+  featuredScholarships: Scholarship[];
+}
+
+export default function HomePage({ categories, countries, featuredScholarships }: HomePageProps) {
   const { siteSettings } = useSiteSettings();
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // عرض في وحدة التحكم لفحص البيانات (للتطوير فقط)
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Categories:', categories);
+      console.log('Countries:', countries);
+      console.log('Featured Scholarships:', featuredScholarships);
+    }
+  }, [categories, countries, featuredScholarships]);
   
   // مقاطع تمرير للأقسام
   const scrollToSection = (id: string) => {
@@ -133,32 +186,39 @@ export default function HomePage() {
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {/* هذه مثال للتصنيفات، يمكن استبدالها بالبيانات الفعلية */}
-            {[
-              { name: 'هندسة', icon: '🏗️', count: 458 },
-              { name: 'طب', icon: '🏥', count: 312 },
-              { name: 'علوم الحاسب', icon: '💻', count: 287 },
-              { name: 'إدارة أعمال', icon: '📊', count: 245 },
-              { name: 'العلوم الإنسانية', icon: '📚', count: 220 },
-              { name: 'العلوم الطبيعية', icon: '🔬', count: 189 },
-              { name: 'الفنون', icon: '🎨', count: 156 },
-              { name: 'القانون', icon: '⚖️', count: 132 },
-            ].map((category, index) => (
-              <Link
-                key={index}
-                href={`/categories/${category.name
-                  .replace(/\s+/g, '-')
-                  .toLowerCase()
-                  .replace(/[^\u0000-\u007F]/g, '')
-                  || `category-${index + 1}`}`}
-                className="block bg-gray-50 dark:bg-gray-700 rounded-xl p-6 hover:shadow-md transition-shadow text-center card-hover"
-              >
-                <div className="text-4xl mb-3">{category.icon}</div>
-                <h3 className="font-bold mb-1">{category.name}</h3>
-                <p className="text-gray-500 dark:text-gray-400 text-sm">
-                  {category.count} منحة
-                </p>
-              </Link>
+            {/* عرض التصنيفات من قاعدة البيانات */}
+            {categories && categories.length > 0 ? categories.map((category) => {
+              // إنشاء رمز تعبيري استنادًا إلى اسم التصنيف
+              let icon = '📚'; // رمز افتراضي
+              
+              if (category.name.includes('هندس')) icon = '🏗️';
+              else if (category.name.includes('طب') || category.name.includes('صح')) icon = '🏥';
+              else if (category.name.includes('حاسب') || category.name.includes('تقني')) icon = '💻';
+              else if (category.name.includes('أعمال') || category.name.includes('إدار')) icon = '📊';
+              else if (category.name.includes('علوم') || category.name.includes('بحث')) icon = '🔬';
+              else if (category.name.includes('فن') || category.name.includes('تصميم')) icon = '🎨';
+              else if (category.name.includes('قانون') || category.name.includes('حقوق')) icon = '⚖️';
+              
+              return (
+                <Link
+                  key={category.id}
+                  href={`/categories/${category.slug}`}
+                  className="block bg-gray-50 dark:bg-gray-700 rounded-xl p-6 hover:shadow-md transition-shadow text-center card-hover"
+                >
+                  <div className="text-4xl mb-3">{icon}</div>
+                  <h3 className="font-bold mb-1">{category.name}</h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
+                    {category.scholarshipCount || 0} منحة
+                  </p>
+                </Link>
+              );
+            }) : Array(8).fill(0).map((_, index) => (
+              // عنصر تحميل
+              <div key={index} className="block bg-gray-50 dark:bg-gray-700 rounded-xl p-6 animate-pulse">
+                <div className="h-16 w-16 mx-auto mb-3 bg-gray-200 dark:bg-gray-600 rounded-full"></div>
+                <div className="h-5 bg-gray-200 dark:bg-gray-600 rounded w-2/3 mx-auto mb-2"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-1/3 mx-auto"></div>
+              </div>
             ))}
           </div>
           
@@ -185,111 +245,91 @@ export default function HomePage() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* هذه مثال للمنح، يمكن استبدالها بالبيانات الفعلية */}
-            {[
-              {
-                title: 'منحة جامعة هارفارد للطلاب الدوليين',
-                country: 'الولايات المتحدة',
-                deadline: '2025-08-15',
-                featured: true,
-                category: 'متعدد التخصصات',
-                level: 'بكالوريوس'
-              },
-              {
-                title: 'منحة جامعة أكسفورد للدراسات العليا',
-                country: 'المملكة المتحدة',
-                deadline: '2025-09-30',
-                featured: false,
-                category: 'متعدد التخصصات',
-                level: 'ماجستير'
-              },
-              {
-                title: 'منحة DAAD للطلاب العرب',
-                country: 'ألمانيا',
-                deadline: '2025-07-20',
-                featured: false,
-                category: 'هندسة',
-                level: 'دكتوراه'
-              },
-              {
-                title: 'منحة جامعة سنغافورة الوطنية',
-                country: 'سنغافورة',
-                deadline: '2025-10-05',
-                featured: true,
-                category: 'علوم الحاسب',
-                level: 'بكالوريوس'
-              },
-              {
-                title: 'منحة جامعة كيوتو للبحث العلمي',
-                country: 'اليابان',
-                deadline: '2025-08-25',
-                featured: false,
-                category: 'العلوم الطبيعية',
-                level: 'دكتوراه'
-              },
-              {
-                title: 'منحة جامعة السوربون',
-                country: 'فرنسا',
-                deadline: '2025-09-15',
-                featured: false,
-                category: 'العلوم الإنسانية',
-                level: 'ماجستير'
-              },
-            ].map((scholarship, index) => (
+            {/* عرض المنح من قاعدة البيانات */}
+            {featuredScholarships && featuredScholarships.length > 0 ? featuredScholarships.map((scholarship) => (
               <Link
-                key={index}
-                href={`/scholarships/${scholarship.title
-                  .replace(/\s+/g, '-')
-                  .toLowerCase()
-                  .replace(/[^\u0000-\u007F]/g, '') // حذف الأحرف غير اللاتينية
-                  || `scholarship-${index + 1}`}`} // استخدام قيمة احتياطية آمنة
+                key={scholarship.id}
+                href={`/scholarships/${scholarship.slug}`}
                 className="block bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow card-hover"
               >
                 <div className="h-48 bg-gray-200 dark:bg-gray-700 relative">
+                  {scholarship.image_url ? (
+                    <div 
+                      className="absolute inset-0 bg-center bg-cover"
+                      style={{ backgroundImage: `url(${scholarship.image_url})` }}
+                    ></div>
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-700"></div>
+                  )}
+                  
                   <div 
                     className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"
                   ></div>
                   
-                  {scholarship.featured && (
+                  {scholarship.is_featured && (
                     <div className="absolute top-4 right-4 bg-amber-500 text-white text-xs px-2 py-1 rounded">
                       منحة مميزة
                     </div>
                   )}
                   
-                  <div className="absolute bottom-4 left-4 text-white">
-                    <div className="text-sm font-medium">
-                      <Globe className="inline-block w-4 h-4 ml-1" />
-                      {scholarship.country}
+                  {scholarship.country && (
+                    <div className="absolute bottom-4 left-4 text-white">
+                      <div className="text-sm font-medium">
+                        <Globe className="inline-block w-4 h-4 ml-1" />
+                        {scholarship.country.name}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
                 
                 <div className="p-6">
                   <h3 className="font-bold text-lg mb-2 line-clamp-2">{scholarship.title}</h3>
                   
                   <div className="flex flex-wrap gap-2 mb-3">
-                    <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 px-2 py-1 rounded">
-                      {scholarship.category}
-                    </span>
-                    <span className="text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-100 px-2 py-1 rounded">
-                      {scholarship.level}
-                    </span>
+                    {scholarship.category && (
+                      <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 px-2 py-1 rounded">
+                        {scholarship.category.name}
+                      </span>
+                    )}
+                    {scholarship.level && (
+                      <span className="text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-100 px-2 py-1 rounded">
+                        {scholarship.level.name}
+                      </span>
+                    )}
                   </div>
                   
                   <div className="flex justify-between items-center text-sm border-t pt-3">
                     <span className="text-gray-600 dark:text-gray-400">
                       <Award className="inline-block w-4 h-4 ml-1" />
-                      ممولة بالكامل
+                      {scholarship.is_fully_funded ? 'ممولة بالكامل' : 'منحة جزئية'}
                     </span>
-                    <span>
-                      <span className="text-gray-500 dark:text-gray-400">آخر موعد: </span>
-                      <span className="font-medium">
-                        {new Date(scholarship.deadline).toLocaleDateString('ar-EG')}
+                    {scholarship.deadline && (
+                      <span>
+                        <span className="text-gray-500 dark:text-gray-400">آخر موعد: </span>
+                        <span className="font-medium">
+                          {new Date(scholarship.deadline).toLocaleDateString('ar-EG')}
+                        </span>
                       </span>
-                    </span>
+                    )}
                   </div>
                 </div>
               </Link>
+            )) : Array(6).fill(0).map((_, index) => (
+              // عنصر تحميل
+              <div key={index} className="block bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm animate-pulse">
+                <div className="h-48 bg-gray-200 dark:bg-gray-700"></div>
+                <div className="p-6">
+                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-4"></div>
+                  <div className="flex gap-2 mb-4">
+                    <div className="h-5 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                    <div className="h-5 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  </div>
+                  <div className="h-4 mt-4 pt-4 border-t flex justify-between">
+                    <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                    <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
           
@@ -315,32 +355,47 @@ export default function HomePage() {
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {/* هذه مثال للدول، يمكن استبدالها بالبيانات الفعلية */}
-            {[
-              { name: 'الولايات المتحدة', flag: '🇺🇸', count: 1240 },
-              { name: 'المملكة المتحدة', flag: '🇬🇧', count: 980 },
-              { name: 'ألمانيا', flag: '🇩🇪', count: 760 },
-              { name: 'كندا', flag: '🇨🇦', count: 620 },
-              { name: 'أستراليا', flag: '🇦🇺', count: 540 },
-              { name: 'فرنسا', flag: '🇫🇷', count: 480 },
-              { name: 'اليابان', flag: '🇯🇵', count: 410 },
-              { name: 'هولندا', flag: '🇳🇱', count: 350 },
-            ].map((country, index) => (
-              <Link
-                key={index}
-                href={`/countries/${country.name
-                  .replace(/\s+/g, '-')
-                  .toLowerCase()
-                  .replace(/[^\u0000-\u007F]/g, '')
-                  || `country-${index + 1}`}`}
-                className="block bg-gray-50 dark:bg-gray-700 rounded-xl p-6 hover:shadow-md transition-shadow text-center card-hover"
-              >
-                <div className="text-4xl mb-3">{country.flag}</div>
-                <h3 className="font-bold mb-1">{country.name}</h3>
-                <p className="text-gray-500 dark:text-gray-400 text-sm">
-                  {country.count} منحة
-                </p>
-              </Link>
+            {/* عرض الدول من قاعدة البيانات */}
+            {countries && countries.length > 0 ? countries.map((country) => {
+              // إنشاء علم استنادًا إلى اسم الدولة
+              let flag = '🌍'; // علم افتراضي
+              
+              if (country.name.includes('أمريك') || country.name.includes('الولايات المتحدة')) flag = '🇺🇸';
+              else if (country.name.includes('بريطاني') || country.name.includes('المملكة المتحدة')) flag = '🇬🇧';
+              else if (country.name.includes('ألمانيا')) flag = '🇩🇪';
+              else if (country.name.includes('كندا')) flag = '🇨🇦';
+              else if (country.name.includes('أسترالي')) flag = '🇦🇺';
+              else if (country.name.includes('فرنسا')) flag = '🇫🇷';
+              else if (country.name.includes('اليابان')) flag = '🇯🇵';
+              else if (country.name.includes('هولندا')) flag = '🇳🇱';
+              else if (country.name.includes('إيطاليا')) flag = '🇮🇹';
+              else if (country.name.includes('إسبانيا')) flag = '🇪🇸';
+              else if (country.name.includes('الصين')) flag = '🇨🇳';
+              else if (country.name.includes('روسيا')) flag = '🇷🇺';
+              else if (country.name.includes('سنغافورة')) flag = '🇸🇬';
+              else if (country.name.includes('ماليزيا')) flag = '🇲🇾';
+              else if (country.name.includes('الهند')) flag = '🇮🇳';
+              
+              return (
+                <Link
+                  key={country.id}
+                  href={`/countries/${country.slug}`}
+                  className="block bg-gray-50 dark:bg-gray-700 rounded-xl p-6 hover:shadow-md transition-shadow text-center card-hover"
+                >
+                  <div className="text-4xl mb-3">{flag}</div>
+                  <h3 className="font-bold mb-1">{country.name}</h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
+                    {country.scholarshipCount || 0} منحة
+                  </p>
+                </Link>
+              );
+            }) : Array(8).fill(0).map((_, index) => (
+              // عنصر تحميل
+              <div key={index} className="block bg-gray-50 dark:bg-gray-700 rounded-xl p-6 animate-pulse">
+                <div className="h-16 w-16 mx-auto mb-3 bg-gray-200 dark:bg-gray-600 rounded-full"></div>
+                <div className="h-5 bg-gray-200 dark:bg-gray-600 rounded w-2/3 mx-auto mb-2"></div>
+                <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-1/3 mx-auto"></div>
+              </div>
             ))}
           </div>
           
