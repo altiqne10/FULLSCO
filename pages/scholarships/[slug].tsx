@@ -471,7 +471,8 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
     }
     
     // تشكيل المسار مباشرة بدون الحاجة للـ URL constructor
-    const apiPath = `${host}/api/scholarships/${slug}`;
+    const apiPath = `${host}/api/scholarships/${encodeURIComponent(slug)}`;
+    console.log(`Fetching scholarship data from: ${apiPath}`);
     const response = await fetch(apiPath);
     
     if (!response.ok) {

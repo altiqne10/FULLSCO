@@ -17,8 +17,10 @@ function logError(error: any, context: string) {
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const slug = req.query.slug as string;
+    console.log(`API: تلقي طلب منحة دراسية بمعرف: ${slug}`);
     
     if (!slug) {
+      console.log(`API: خطأ - معرف المنحة مفقود`);
       return res.status(400).json({
         success: false,
         message: 'يجب توفير معرف المنحة الدراسية'
@@ -26,18 +28,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     
     // الحصول على المنحة الدراسية بناءً على الاسم المستعار (slug)
+    console.log(`API: جاري البحث عن المنحة في قاعدة البيانات: ${slug}`);
     const scholarshipData = await db.select().from(scholarships)
       .where(eq(scholarships.slug, slug))
       .limit(1);
     
     if (!scholarshipData || scholarshipData.length === 0) {
+      console.log(`API: لم يتم العثور على المنحة الدراسية: ${slug}`);
       return res.status(404).json({
         success: false,
         message: 'لم يتم العثور على المنحة الدراسية'
       });
     }
     
+    console.log(`API: تم العثور على المنحة الدراسية: ${JSON.stringify(scholarshipData[0].id)}`);
     const scholarship = scholarshipData[0];
+    
+    // تعديل اسم حقل الصورة إذا كان موجودًا
+    if (scholarship.imageUrl && !scholarship.thumbnailUrl) {
+      scholarship.thumbnailUrl = scholarship.imageUrl;
+    }
     
     // ملاحظة: لا يوجد عمود views في جدول المنح الدراسية
     // لذلك تم تعطيل هذا الجزء مؤقتًا
