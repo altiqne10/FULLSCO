@@ -212,7 +212,7 @@ export default function HomePage({ categories, countries, featuredScholarships }
               return (
                 <Link
                   key={category.id}
-                  href={`/categories/${category.slug}`}
+                  href={`/scholarships?category=${category.slug}`}
                   className="block bg-gray-50 dark:bg-gray-700 rounded-xl p-6 hover:shadow-md transition-shadow text-center card-hover"
                 >
                   <div className="text-4xl mb-3">{icon}</div>
@@ -234,7 +234,7 @@ export default function HomePage({ categories, countries, featuredScholarships }
           
           <div className="text-center mt-10">
             <Link
-              href="/categories"
+              href="/scholarships"
               className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
             >
               عرض جميع التصنيفات
@@ -307,7 +307,7 @@ export default function HomePage({ categories, countries, featuredScholarships }
             {countries && countries.length > 0 ? countries.map((country) => (
               <Link
                 key={country.id}
-                href={`/countries/${country.slug}`}
+                href={`/scholarships?country=${country.slug}`}
                 className="block bg-gray-50 dark:bg-gray-700 rounded-xl p-4 hover:shadow-md transition-shadow card-hover"
               >
                 <div className="flex items-center gap-3">
@@ -348,7 +348,7 @@ export default function HomePage({ categories, countries, featuredScholarships }
           
           <div className="text-center mt-10">
             <Link
-              href="/countries"
+              href="/scholarships"
               className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
             >
               عرض جميع الدول
