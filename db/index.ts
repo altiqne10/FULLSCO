@@ -1,7 +1,12 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
+// تحديث لاستخدام neon serverless
+import { Pool, neonConfig } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
+import ws from 'ws';
 import * as schema from '../shared/schema';
 import 'dotenv/config';
+
+// تكوين neon لاستخدام WebSocket
+neonConfig.webSocketConstructor = ws;
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
@@ -9,14 +14,17 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// إنشاء عميل postgres مع إعدادات مخصصة
-const client = postgres(process.env.DATABASE_URL, { 
-  max: 10, // عدد الاتصالات المتزامنة المسموح بها
-  idle_timeout: 20, // زمن انتهاء الاتصال الغير مستخدم
-  connect_timeout: 10, // زمن انتهاء محاولة الاتصال
+// إنشاء pool ثم كائن drizzle
+export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+export const db = drizzle(pool, { schema });
+
+// معالجة إغلاق الاتصال
+process.on('SIGINT', async () => {
+  await pool.end();
+  process.exit(0);
 });
 
-// إنشاء كائن drizzle مع تكوين السجلات
-export const db = drizzle(client, { 
-  schema,
+process.on('SIGTERM', async () => {
+  await pool.end();
+  process.exit(0);
 });

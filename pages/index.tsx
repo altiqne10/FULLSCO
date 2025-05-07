@@ -548,10 +548,10 @@ export default function HomePage({ categories, countries, featuredScholarships }
 
 export const getServerSideProps: GetServerSideProps = async () => {
   try {
-    console.log('Starting getServerSideProps...');
+    console.log('Starting getServerSideProps with safer implementation...');
     
-    // استيراد الوظائف المساعدة من lib/utils
-    const { safeObjectEntries, safeReduce, formatDate, debug } = await import('../lib/utils');
+    // استيراد الوظائف المساعدة
+    const { formatDate } = await import('../lib/utils');
     // استيراد الوحدات اللازمة
     const { db } = await import('../db');
     const { sql, desc } = await import('drizzle-orm');
@@ -596,7 +596,12 @@ export const getServerSideProps: GetServerSideProps = async () => {
       .limit(6);
 
     // جلب المعلومات المفصلة للمنح الدراسية (التصنيف، الدولة، المستوى)
-    const featuredScholarshipsPromises = featuredScholarshipsQuery.map(async (scholarship) => {
+    console.log("Featured scholarships data:", JSON.stringify(featuredScholarshipsQuery || []));
+    
+    // التأكد من أن featuredScholarshipsQuery هو مصفوفة حتى لو كان فارغًا
+    const safeScholarshipsArray = Array.isArray(featuredScholarshipsQuery) ? featuredScholarshipsQuery : [];
+    
+    const featuredScholarshipsPromises = safeScholarshipsArray.map(async (scholarship) => {
       // جلب التصنيف
       let category = null;
       if (scholarship.categoryId) {
