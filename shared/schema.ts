@@ -46,7 +46,8 @@ export const insertLevelSchema = createInsertSchema(levels).omit({
 export const countries = pgTable("countries", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  slug: text("slug").notNull().unique()
+  slug: text("slug").notNull().unique(),
+  flagUrl: text("flag_url") // إضافة حقل رابط العلم
 });
 
 export const insertCountrySchema = createInsertSchema(countries).omit({

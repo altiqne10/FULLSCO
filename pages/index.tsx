@@ -578,7 +578,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
         id: countries.id,
         name: countries.name,
         slug: countries.slug,
-        flagUrl: countries.flagUrl,
+        // تجنب استخدام flagUrl حتى يتم تحديث قاعدة البيانات
         scholarshipCount: sql`count(${scholarships.id})`.mapWith(Number),
       })
       .from(countries)
@@ -586,6 +586,12 @@ export const getServerSideProps: GetServerSideProps = async () => {
       .groupBy(countries.id)
       .orderBy(sql`count(${scholarships.id}) DESC`)
       .limit(8);
+      
+    // إضافة حقل flagUrl بشكل يدوي لكل دولة
+    const countriesWithFlags = countriesWithCount.map(country => ({
+      ...country,
+      flagUrl: null // حقل فارغ للآن حتى يتم تحديث البنية
+    }));
 
     // جلب المنح الدراسية المميزة مع التصنيفات والدول والمستويات المرتبطة بها
     const featuredScholarshipsQuery = await db
