@@ -651,19 +651,46 @@ export const getServerSideProps: GetServerSideProps = async () => {
       }
 
       // تحويل كائن المنحة إلى كائن قابل للتسلسل (JSON serializable)
+      // تأكد من أن كائن scholarship غير فارغ
+      if (!scholarship) {
+        return null; // إذا كان فارغًا، نرجع قيمة null
+      }
+
+      // التعامل الآمن مع كائن scholarship
+      const safeScholarship = scholarship || {};
+      
       const { 
-        id, title, slug, description, amount, currency, university, department, website,
-        isFeatured, isFullyFunded, countryId, levelId, categoryId, requirements,
-        applicationLink, imageUrl, content, seoTitle, seoDescription, seoKeywords,
-        focusKeyword, isPublished
-      } = scholarship;
+        id = 0, 
+        title = '', 
+        slug = '', 
+        description = '', 
+        amount = null, 
+        currency = null, 
+        university = null, 
+        department = null, 
+        website = null,
+        isFeatured = false, 
+        isFullyFunded = false, 
+        countryId = null, 
+        levelId = null, 
+        categoryId = null, 
+        requirements = null,
+        applicationLink = null, 
+        imageUrl = null, 
+        content = null, 
+        seoTitle = null, 
+        seoDescription = null, 
+        seoKeywords = null,
+        focusKeyword = null, 
+        isPublished = false
+      } = safeScholarship;
       
       // استخدام الوظيفة المستوردة لتنسيق التواريخ
-      const createdAtStr = formatDate(scholarship.createdAt);
-      const updatedAtStr = formatDate(scholarship.updatedAt);
-      const startDateStr = formatDate(scholarship.startDate);
-      const endDateStr = formatDate(scholarship.endDate);
-      const deadlineStr = formatDate(scholarship.deadline);
+      const createdAtStr = formatDate(safeScholarship.createdAt);
+      const updatedAtStr = formatDate(safeScholarship.updatedAt);
+      const startDateStr = formatDate(safeScholarship.startDate);
+      const endDateStr = formatDate(safeScholarship.endDate);
+      const deadlineStr = formatDate(safeScholarship.deadline);
 
       // إرجاع كائن جديد مع جميع المعلومات المطلوبة
       return {
@@ -676,20 +703,20 @@ export const getServerSideProps: GetServerSideProps = async () => {
         university, 
         department, 
         website,
-        isFeatured: scholarship.isFeatured, 
-        isFullyFunded: scholarship.isFullyFunded, 
-        countryId: scholarship.countryId, 
-        levelId: scholarship.levelId, 
-        categoryId: scholarship.categoryId, 
-        requirements: scholarship.requirements,
-        applicationLink: scholarship.applicationLink, 
-        imageUrl: scholarship.imageUrl, 
+        isFeatured, 
+        isFullyFunded, 
+        countryId, 
+        levelId, 
+        categoryId, 
+        requirements,
+        applicationLink, 
+        imageUrl, 
         content, 
-        seoTitle: scholarship.seoTitle, 
-        seoDescription: scholarship.seoDescription, 
-        seoKeywords: scholarship.seoKeywords,
-        focusKeyword: scholarship.focusKeyword, 
-        isPublished: scholarship.isPublished, 
+        seoTitle, 
+        seoDescription, 
+        seoKeywords,
+        focusKeyword, 
+        isPublished, 
         createdAt: createdAtStr, 
         updatedAt: updatedAtStr, 
         startDate: startDateStr, 
