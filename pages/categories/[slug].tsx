@@ -230,10 +230,20 @@ export const getServerSideProps: GetServerSideProps = async ({ params, query }) 
     const totalItems = count || 0;
     const totalPages = Math.ceil(totalItems / limit);
     
+    // تحويل التواريخ إلى سلاسل نصية قبل إرجاعها (لحل مشكلة تسلسل Date)
+    const serializableScholarships = scholarshipsList.map(scholarship => ({
+      ...scholarship,
+      created_at: scholarship.created_at instanceof Date ? scholarship.created_at.toISOString() : scholarship.created_at,
+      updated_at: scholarship.updated_at instanceof Date ? scholarship.updated_at.toISOString() : scholarship.updated_at,
+      start_date: scholarship.start_date instanceof Date ? scholarship.start_date.toISOString() : scholarship.start_date,
+      end_date: scholarship.end_date instanceof Date ? scholarship.end_date.toISOString() : scholarship.end_date,
+      deadline: scholarship.deadline instanceof Date ? scholarship.deadline.toISOString() : scholarship.deadline,
+    }));
+
     return {
       props: {
         category,
-        scholarships: scholarshipsList || [],
+        scholarships: serializableScholarships || [],
         totalPages,
         currentPage: page,
         totalItems,

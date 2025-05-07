@@ -209,35 +209,56 @@ export const getServerSideProps: GetServerSideProps = async ({ params, query }) 
     const page = parseInt(query.page as string || '1', 10);
     const limit = parseInt(query.limit as string || '9', 10);
 
-    // تحديد عنوان URL الكامل للواجهة البرمجية
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 
-                   (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000');
+    // استيراد الوحدات اللازمة
+    const { db } = await import('@/db');
+    const { eq, sql } = await import('drizzle-orm');
+    const { countries, scholarships } = await import('@/shared/schema');
     
-    // جلب تفاصيل الدولة والمنح المرتبطة بها
-    const apiUrl = `/api/countries/${slug}?page=${page}&limit=${limit}`;
-    const res = await fetch(`${baseUrl}${apiUrl}`);
-    const data = await res.json();
-
-    // التحقق من الاستجابة
-    if (!res.ok) {
-      // إذا لم يتم العثور على الدولة، توجيه المستخدم إلى صفحة 404
-      if (res.status === 404) {
-        return { notFound: true };
-      }
-      throw new Error(data.error || 'حدث خطأ أثناء جلب تفاصيل الدولة');
+    // جلب تفاصيل الدولة
+    const [country] = await db
+      .select()
+      .from(countries)
+      .where(eq(countries.slug, slug as string));
+    
+    // التحقق من وجود الدولة
+    if (!country) {
+      console.error('Country not found:', slug);
+      return { notFound: true };
     }
-
+    
+    // جلب المنح المرتبطة بالدولة
+    const offset = (page - 1) * limit;
+    
+    const scholarshipsList = await db
+      .select()
+      .from(scholarships)
+      .where(eq(scholarships.countryId, country.id))
+      .limit(limit)
+      .offset(offset)
+      .orderBy(scholarships.createdAt);
+    
+    // جلب إجمالي عدد المنح للدولة
+    const [{ count }] = await db
+      .select({ count: sql`COUNT(*)`.mapWith(Number) })
+      .from(scholarships)
+      .where(eq(scholarships.countryId, country.id));
+    
+    const totalItems = count || 0;
+    const totalPages = Math.ceil(totalItems / limit);
+    
     return {
       props: {
-        country: data.country,
-        scholarships: data.scholarships || [],
-        totalPages: data.pagination?.totalPages || 1,
-        currentPage: data.pagination?.page || 1,
-        totalItems: data.pagination?.totalItems || 0,
+        country,
+        scholarships: scholarshipsList || [],
+        totalPages,
+        currentPage: page,
+        totalItems,
       },
     };
   } catch (error) {
     console.error('Error fetching country details:', error);
+    
+    // توجيه المستخدم إلى صفحة 404 في حالة وجود خطأ
     return { notFound: true };
   }
 };

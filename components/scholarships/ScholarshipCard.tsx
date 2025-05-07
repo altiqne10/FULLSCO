@@ -10,20 +10,22 @@ interface ScholarshipCardData {
   title: string;
   slug: string;
   description?: string;
-  thumbnailUrl?: string;
-  imageUrl?: string; // بعض المنح تستخدم imageUrl بدلاً من thumbnailUrl
-  isFeatured?: boolean;
+  image_url?: string; // الاسم الفعلي في قاعدة البيانات
+  is_featured?: boolean; // الاسم الفعلي في قاعدة البيانات
+  is_fully_funded?: boolean; // الاسم الفعلي في قاعدة البيانات
   deadline?: string | null;
-  fundingType?: string;
-  studyDestination?: string;
-  categoryId?: number;
-  countryId?: number;
-  levelId?: number;
+  currency?: string;
+  amount?: string;
+  university?: string;
+  department?: string;
+  category_id?: number; // الاسم الفعلي في قاعدة البيانات
+  country_id?: number; // الاسم الفعلي في قاعدة البيانات
+  level_id?: number; // الاسم الفعلي في قاعدة البيانات
   category?: { id: number; name: string; slug: string };
   country?: { id: number; name: string; slug: string };
   level?: { id: number; name: string; slug: string };
-  createdAt?: string | Date;
-  updatedAt?: string | Date;
+  created_at?: string | Date; // الاسم الفعلي في قاعدة البيانات
+  updated_at?: string | Date; // الاسم الفعلي في قاعدة البيانات
 }
 
 interface ScholarshipCardProps {
@@ -49,9 +51,9 @@ export function ScholarshipCard({ scholarship, isCompact = false }: ScholarshipC
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="relative h-48 bg-gray-200 dark:bg-gray-700">
-        {(scholarship.thumbnailUrl || scholarship.imageUrl) ? (
+        {scholarship.image_url ? (
           <Image
-            src={scholarship.thumbnailUrl || scholarship.imageUrl || '/placeholder-scholarship.jpg'}
+            src={scholarship.image_url || '/placeholder-scholarship.jpg'}
             alt={scholarship.title}
             fill
             className="object-cover"
@@ -67,7 +69,7 @@ export function ScholarshipCard({ scholarship, isCompact = false }: ScholarshipC
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent"></div>
         
         {/* شارة المنح المميزة */}
-        {scholarship.isFeatured && (
+        {scholarship.is_featured && (
           <div className="absolute top-4 right-4 bg-amber-500 text-white text-xs px-2 py-1 rounded-full">
             منحة مميزة
           </div>
@@ -77,7 +79,7 @@ export function ScholarshipCard({ scholarship, isCompact = false }: ScholarshipC
         <div className="absolute bottom-4 left-4 text-white">
           <div className="flex items-center text-sm font-medium">
             <Globe className="w-4 h-4 ml-1 rtl:ml-1 rtl:mr-0" />
-            {scholarship.country?.name || scholarship.studyDestination || 'دولي'}
+            {scholarship.country?.name || scholarship.university || 'دولي'}
           </div>
         </div>
       </div>
@@ -94,27 +96,35 @@ export function ScholarshipCard({ scholarship, isCompact = false }: ScholarshipC
         )}
         
         <div className="flex flex-wrap gap-2 mb-3">
-          {scholarship.categoryId && (
+          {scholarship.category_id && (
             <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 px-2 py-1 rounded-full">
-              {scholarship.category?.name || scholarship.fundingType || 'منحة دراسية'}
+              {scholarship.category?.name || 'منحة دراسية'}
             </span>
           )}
           
-          {scholarship.levelId && (
+          {scholarship.level_id && (
             <span className="text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-100 px-2 py-1 rounded-full">
               {scholarship.level?.name || 'جميع المستويات'}
             </span>
           )}
           
-          <span className="text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 px-2 py-1 rounded-full">
-            <Award className="inline-block w-3 h-3 mr-1" />
-            ممولة
-          </span>
+          {scholarship.is_fully_funded && (
+            <span className="text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 px-2 py-1 rounded-full">
+              <Award className="inline-block w-3 h-3 mr-1" />
+              ممولة بالكامل
+            </span>
+          )}
+
+          {(scholarship.amount && scholarship.currency) && (
+            <span className="text-xs bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-100 px-2 py-1 rounded-full">
+              {scholarship.amount} {scholarship.currency}
+            </span>
+          )}
         </div>
         
         <div className="flex justify-between items-center text-sm pt-3 border-t border-gray-100 dark:border-gray-700">
           <span className="text-gray-500 dark:text-gray-400">
-            {scholarship.createdAt && new Date(scholarship.createdAt).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' })}
+            {scholarship.created_at && new Date(scholarship.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' })}
           </span>
           
           <span className="flex items-center text-gray-700 dark:text-gray-300 font-medium">
