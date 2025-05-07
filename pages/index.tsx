@@ -545,3 +545,153 @@ export default function HomePage({ categories, countries, featuredScholarships }
     </MainLayout>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  try {
+    // استيراد الوحدات اللازمة
+    const { db } = await import('../db');
+    const { sql, desc } = await import('drizzle-orm');
+    const { categories, countries, scholarships, levels } = await import('../shared/schema');
+
+    // جلب التصنيفات مع عدد المنح الدراسية لكل تصنيف
+    const categoriesWithCount = await db
+      .select({
+        id: categories.id,
+        name: categories.name,
+        slug: categories.slug,
+        description: categories.description,
+        scholarshipCount: sql`count(${scholarships.id})`.mapWith(Number),
+      })
+      .from(categories)
+      .leftJoin(scholarships, sql`${scholarships.categoryId} = ${categories.id}`)
+      .groupBy(categories.id)
+      .orderBy(sql`count(${scholarships.id}) DESC`)
+      .limit(8);
+
+    // جلب الدول مع عدد المنح الدراسية لكل دولة
+    const countriesWithCount = await db
+      .select({
+        id: countries.id,
+        name: countries.name,
+        slug: countries.slug,
+        flagUrl: countries.flagUrl,
+        scholarshipCount: sql`count(${scholarships.id})`.mapWith(Number),
+      })
+      .from(countries)
+      .leftJoin(scholarships, sql`${scholarships.countryId} = ${countries.id}`)
+      .groupBy(countries.id)
+      .orderBy(sql`count(${scholarships.id}) DESC`)
+      .limit(8);
+
+    // جلب المنح الدراسية المميزة مع التصنيفات والدول والمستويات المرتبطة بها
+    const featuredScholarshipsQuery = await db
+      .select()
+      .from(scholarships)
+      .where(sql`${scholarships.isFeatured} = true AND ${scholarships.isPublished} = true`)
+      .orderBy(sql`${scholarships.createdAt} DESC`)
+      .limit(6);
+
+    // جلب المعلومات المفصلة للمنح الدراسية (التصنيف، الدولة، المستوى)
+    const featuredScholarshipsPromises = featuredScholarshipsQuery.map(async (scholarship) => {
+      // جلب التصنيف
+      let category = null;
+      if (scholarship.category_id) {
+        const [categoryData] = await db
+          .select()
+          .from(categories)
+          .where(sql`${categories.id} = ${scholarship.category_id}`);
+        if (categoryData) {
+          category = {
+            id: categoryData.id,
+            name: categoryData.name,
+            slug: categoryData.slug
+          };
+        }
+      }
+
+      // جلب الدولة
+      let country = null;
+      if (scholarship.country_id) {
+        const [countryData] = await db
+          .select()
+          .from(countries)
+          .where(sql`${countries.id} = ${scholarship.country_id}`);
+        if (countryData) {
+          country = {
+            id: countryData.id,
+            name: countryData.name,
+            slug: countryData.slug
+          };
+        }
+      }
+
+      // جلب المستوى الدراسي
+      let level = null;
+      if (scholarship.level_id) {
+        const [levelData] = await db
+          .select()
+          .from(levels)
+          .where(sql`${levels.id} = ${scholarship.level_id}`);
+        if (levelData) {
+          level = {
+            id: levelData.id,
+            name: levelData.name,
+            slug: levelData.slug
+          };
+        }
+      }
+
+      // تحويل كائن المنحة إلى كائن قابل للتسلسل (JSON serializable)
+      const { 
+        id, title, slug, description, amount, currency, university, department, website,
+        is_featured, is_fully_funded, country_id, level_id, category_id, requirements,
+        application_link, image_url, content, seo_title, seo_description, seo_keywords,
+        focus_keyword, is_published
+      } = scholarship;
+      
+      // تحويل التواريخ إلى سلاسل نصية
+      const created_at = scholarship.created_at instanceof Date ? scholarship.created_at.toISOString() : 
+                        scholarship.created_at ? String(scholarship.created_at) : null;
+                        
+      const updated_at = scholarship.updated_at instanceof Date ? scholarship.updated_at.toISOString() : 
+                        scholarship.updated_at ? String(scholarship.updated_at) : null;
+                        
+      const start_date = scholarship.start_date instanceof Date ? scholarship.start_date.toISOString() : 
+                        scholarship.start_date ? String(scholarship.start_date) : null;
+                        
+      const end_date = scholarship.end_date instanceof Date ? scholarship.end_date.toISOString() : 
+                      scholarship.end_date ? String(scholarship.end_date) : null;
+                      
+      const deadline = scholarship.deadline instanceof Date ? scholarship.deadline.toISOString() : 
+                      scholarship.deadline ? String(scholarship.deadline) : null;
+
+      // إرجاع كائن جديد مع جميع المعلومات المطلوبة
+      return {
+        id, title, slug, description, amount, currency, university, department, website,
+        is_featured, is_fully_funded, country_id, level_id, category_id, requirements,
+        application_link, image_url, content, seo_title, seo_description, seo_keywords,
+        focus_keyword, is_published, created_at, updated_at, start_date, end_date, deadline,
+        category, country, level
+      };
+    });
+    
+    const featuredScholarships = await Promise.all(featuredScholarshipsPromises);
+
+    return {
+      props: {
+        categories: categoriesWithCount || [],
+        countries: countriesWithCount || [],
+        featuredScholarships: featuredScholarships || [],
+      },
+    };
+  } catch (error) {
+    console.error('Error fetching homepage data:', error);
+    return {
+      props: {
+        categories: [],
+        countries: [],
+        featuredScholarships: [],
+      },
+    };
+  }
+};

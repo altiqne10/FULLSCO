@@ -3,6 +3,8 @@
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
   "/": "pages/index.js",
-  "/categories": "pages/categories.js",
+  "/404": "pages/404.js",
+  "/scholarships": "pages/scholarships.js",
+  "/api/scholarships": "pages/api/scholarships.js",
   "/api/site-settings": "pages/api/site-settings.js"
 }
