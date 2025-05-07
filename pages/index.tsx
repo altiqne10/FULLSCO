@@ -168,7 +168,7 @@ export default function HomePage() {
               className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
             >
               عرض جميع التصنيفات
-              <ArrowRight className="mr-2 h-4 w-4 rtl:rotate-180" />
+              <ArrowRight className="mr-2 h-4 w-4 rtl-mirror" />
             </Link>
           </div>
         </div>

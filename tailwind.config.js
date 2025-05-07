@@ -41,8 +41,46 @@ module.exports = {
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
         display: ['Poppins', 'sans-serif'],
+        // إضافة الخطوط العربية
+        tajawal: ['Tajawal', 'sans-serif'],
+        cairo: ['Cairo', 'sans-serif'],
+      },
+      // تكوين للغة العربية - RTL
+      textAlign: {
+        start: 'start',
+        end: 'end',
       },
     },
   },
-  plugins: [],
+  // إضافة ملحقات للدعم الأفضل لـ RTL
+  plugins: [
+    function({ addUtilities }) {
+      const newUtilities = {
+        '.rtl': {
+          direction: 'rtl',
+          textAlign: 'right',
+        },
+        '.ltr': {
+          direction: 'ltr',
+          textAlign: 'left',
+        },
+        '.flip-x': {
+          transform: 'scaleX(-1)',
+        },
+        '.space-start': {
+          justifyContent: 'flex-start',
+        },
+        '.space-end': {
+          justifyContent: 'flex-end',
+        },
+        '.mr-auto-rtl': {
+          marginRight: 'auto',
+        },
+        '.ml-auto-rtl': {
+          marginLeft: 'auto',
+        },
+      }
+      addUtilities(newUtilities)
+    }
+  ],
 };

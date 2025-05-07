@@ -1,3 +1,7 @@
+/* استيراد خط Tajawal من Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -79,6 +83,12 @@
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
     font-feature-settings: "rlig" 1, "calt" 1;
+    font-family: 'Tajawal', sans-serif;
+  }
+  
+  /* تطبيق الخط العربي على الموقع بشكل افتراضي */
+  html, body {
+    direction: rtl;
   }
 
   /* Font settings */
@@ -101,6 +111,24 @@
 
   [dir="rtl"] .rtl\:left-auto {
     left: auto;
+  }
+  
+  /* أنماط إضافية للتوافق مع RTL */
+  .rtl-flip {
+    transform: scaleX(-1);
+  }
+  
+  /* تعديل أنماط الهوامش لتتناسب مع RTL */
+  [dir="rtl"] .ml-1, [dir="rtl"] .ml-2, [dir="rtl"] .ml-3, [dir="rtl"] .ml-4, [dir="rtl"] .ml-5 {
+    margin-left: 0;
+  }
+  [dir="rtl"] .mr-1, [dir="rtl"] .mr-2, [dir="rtl"] .mr-3, [dir="rtl"] .mr-4, [dir="rtl"] .mr-5 {
+    margin-right: 0;
+  }
+  
+  /* تعديل أنماط الأيقونات في RTL */
+  [dir="rtl"] svg.rtl-mirror {
+    transform: scaleX(-1);
   }
 
   /* Gradients */

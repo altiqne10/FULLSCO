@@ -29,11 +29,11 @@ export default function MainLayout({
   // تنسيق الوصف
   const formattedDescription = description || siteSettings?.siteDescription || 'منصة المنح الدراسية والفرص التعليمية';
   
-  // التحقق من الاتجاه
-  const isRtl = router.locale === 'ar' || router.defaultLocale === 'ar';
+  // استخدام RTL دائمًا للمحتوى العربي
+  const isRtl = true; // موقعنا عربي بالكامل
   
   return (
-    <div dir={isRtl ? 'rtl' : 'ltr'} className={isRtl ? 'font-tajawal' : 'font-inter'}>
+    <div dir="rtl" className="font-tajawal">
       <Head>
         <title>{formattedTitle}</title>
         <meta name="description" content={formattedDescription} />

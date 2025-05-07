@@ -4,8 +4,5 @@
   "/_document": "pages/_document.js",
   "/": "pages/index.js",
   "/404": "pages/404.js",
-  "/scholarships/[slug]": "pages/scholarships/[slug].js",
-  "/api/site-settings": "pages/api/site-settings.js",
-  "/scholarships": "pages/scholarships.js",
-  "/api/scholarships": "pages/api/scholarships.js"
+  "/api/site-settings": "pages/api/site-settings.js"
 }
