@@ -9,6 +9,23 @@ import { ScholarshipCard } from '@/components/scholarships/ScholarshipCard';
 import { CalendarClock, MapPin, GraduationCap, BookOpen, Briefcase, Clock, AlertCircle, Award, DollarSign, School, FileText, Share2, Bookmark, ExternalLink } from 'lucide-react';
 import { useSiteSettings } from '@/contexts/site-settings-context';
 
+// دالة مساعدة لضمان أن تكون جميع قيم التاريخ مسلسلة بشكل صحيح
+function serializeDate(date: any): string | null {
+  if (!date) return null;
+  
+  try {
+    if (date instanceof Date) {
+      return date.toISOString();
+    } else if (typeof date === 'string') {
+      return new Date(date).toISOString();
+    }
+    return null;
+  } catch (e) {
+    console.warn(`Error serializing date: ${date}`, e);
+    return null;
+  }
+}
+
 // تعريف واجهة تفاصيل المنحة الدراسية
 interface ScholarshipDetail {
   id: number;
@@ -560,22 +577,35 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
       ...scholarship,
       thumbnailUrl: scholarship.imageUrl,
       content: scholarship.content || scholarship.description,
+      fundingType: scholarship.fundingType || "ممول بالكامل",
       category: categoryInfo,
       country: countryInfo,
       level: levelInfo
     };
     
-    // تنسيق التواريخ
+    // تنسيق جميع التواريخ باستخدام الدالة المساعدة
     const formattedScholarship = {
       ...scholarshipWithRelations,
-      createdAt: scholarship.createdAt ? scholarship.createdAt.toISOString() : new Date().toISOString(),
-      updatedAt: scholarship.updatedAt ? scholarship.updatedAt.toISOString() : new Date().toISOString()
+      startDate: serializeDate(scholarship.startDate),
+      endDate: serializeDate(scholarship.endDate),
+      deadline: serializeDate(scholarship.deadline) || scholarship.deadline,
+      createdAt: serializeDate(scholarship.createdAt) || new Date().toISOString(),
+      updatedAt: serializeDate(scholarship.updatedAt) || new Date().toISOString(),
+      // تحويل أي حقول تاريخ أخرى إذا وجدت
+      applicationStartDate: serializeDate(scholarship.applicationStartDate),
+      applicationEndDate: serializeDate(scholarship.applicationEndDate)
     };
+    
+    // معالجة المنح ذات الصلة وتنسيق التواريخ فيها
+    const formattedRelatedScholarships = relatedScholarships.map(scholarship => ({
+      ...scholarship,
+      deadline: serializeDate(scholarship.deadline) || scholarship.deadline,
+    }));
     
     return {
       props: {
         scholarship: formattedScholarship,
-        relatedScholarships: relatedScholarships || []
+        relatedScholarships: formattedRelatedScholarships || []
       }
     };
   } catch (error) {
