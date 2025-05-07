@@ -258,7 +258,7 @@ export default function HomePage() {
                   
                   <div className="absolute bottom-4 left-4 text-white">
                     <div className="text-sm font-medium">
-                      <Globe className="inline-block w-4 h-4 mr-1" />
+                      <Globe className="inline-block w-4 h-4 ml-1" />
                       {scholarship.country}
                     </div>
                   </div>
@@ -278,7 +278,7 @@ export default function HomePage() {
                   
                   <div className="flex justify-between items-center text-sm border-t pt-3">
                     <span className="text-gray-600 dark:text-gray-400">
-                      <Award className="inline-block w-4 h-4 mr-1" />
+                      <Award className="inline-block w-4 h-4 ml-1" />
                       ممولة بالكامل
                     </span>
                     <span>
@@ -350,7 +350,7 @@ export default function HomePage() {
               className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
             >
               عرض جميع الدول
-              <ArrowRight className="mr-2 h-4 w-4 rtl:rotate-180" />
+              <ArrowRight className="mr-2 h-4 w-4 rtl-mirror" />
             </Link>
           </div>
         </div>
@@ -414,13 +414,13 @@ export default function HomePage() {
                 
                 <ul className="space-y-3">
                   <li className="flex items-start">
-                    <svg className="h-5 w-5 text-green-400 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="h-5 w-5 text-green-400 checkmark-icon mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     <span>ابدأ البحث مبكراً قبل المواعيد النهائية بوقت كاف</span>
                   </li>
                   <li className="flex items-start">
-                    <svg className="h-5 w-5 text-green-400 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="h-5 w-5 text-green-400 checkmark-icon mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                     <span>تأكد من استيفاء جميع الشروط قبل التقديم</span>

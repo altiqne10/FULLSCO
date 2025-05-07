@@ -121,14 +121,60 @@
   /* تعديل أنماط الهوامش لتتناسب مع RTL */
   [dir="rtl"] .ml-1, [dir="rtl"] .ml-2, [dir="rtl"] .ml-3, [dir="rtl"] .ml-4, [dir="rtl"] .ml-5 {
     margin-left: 0;
+    margin-right: 0.25rem;
   }
   [dir="rtl"] .mr-1, [dir="rtl"] .mr-2, [dir="rtl"] .mr-3, [dir="rtl"] .mr-4, [dir="rtl"] .mr-5 {
     margin-right: 0;
+    margin-left: 0.25rem;
   }
+  
+  /* تحويل الهوامش في RTL */
+  [dir="rtl"] .mr-1 { margin-left: 0.25rem; margin-right: 0; }
+  [dir="rtl"] .mr-2 { margin-left: 0.5rem; margin-right: 0; }
+  [dir="rtl"] .mr-3 { margin-left: 0.75rem; margin-right: 0; }
+  [dir="rtl"] .mr-4 { margin-left: 1rem; margin-right: 0; }
+  [dir="rtl"] .mr-5 { margin-left: 1.25rem; margin-right: 0; }
+  
+  [dir="rtl"] .ml-1 { margin-right: 0.25rem; margin-left: 0; }
+  [dir="rtl"] .ml-2 { margin-right: 0.5rem; margin-left: 0; }
+  [dir="rtl"] .ml-3 { margin-right: 0.75rem; margin-left: 0; }
+  [dir="rtl"] .ml-4 { margin-right: 1rem; margin-left: 0; }
+  [dir="rtl"] .ml-5 { margin-right: 1.25rem; margin-left: 0; }
   
   /* تعديل أنماط الأيقونات في RTL */
   [dir="rtl"] svg.rtl-mirror {
     transform: scaleX(-1);
+  }
+  
+  /* أنماط خاصة لعلامات الاختيار في RTL */
+  [dir="rtl"] .checkmark-icon {
+    margin-left: 0;
+    margin-right: 0.5rem;
+  }
+  
+  /* تصحيحات لتباعد العناصر في RTL */
+  [dir="rtl"] .space-x-1 > :not([hidden]) ~ :not([hidden]),
+  [dir="rtl"] .space-x-2 > :not([hidden]) ~ :not([hidden]),
+  [dir="rtl"] .space-x-3 > :not([hidden]) ~ :not([hidden]),
+  [dir="rtl"] .space-x-4 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-x-reverse: 1;
+  }
+  
+  /* تصحيح ترتيب المحتوى لـ RTL */
+  [dir="rtl"] .flex.rtl-reverse {
+    flex-direction: row-reverse;
+  }
+  
+  /* أنماط خاصة بالأزرار والعناصر التفاعلية في RTL */
+  [dir="rtl"] .inline-flex.rtl-reverse {
+    flex-direction: row-reverse;
+  }
+  
+  /* تعديل أحجام الخط للغة العربية */
+  html[dir="rtl"] {
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
   }
 
   /* Gradients */
