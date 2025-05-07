@@ -146,7 +146,11 @@ export default function HomePage() {
             ].map((category, index) => (
               <Link
                 key={index}
-                href={`/categories/${category.name}`}
+                href={`/categories/${category.name
+                  .replace(/\s+/g, '-')
+                  .toLowerCase()
+                  .replace(/[^\u0000-\u007F]/g, '')
+                  || `category-${index + 1}`}`}
                 className="block bg-gray-50 dark:bg-gray-700 rounded-xl p-6 hover:shadow-md transition-shadow text-center card-hover"
               >
                 <div className="text-4xl mb-3">{category.icon}</div>
@@ -234,7 +238,11 @@ export default function HomePage() {
             ].map((scholarship, index) => (
               <Link
                 key={index}
-                href={`/scholarships/${scholarship.title.replace(/\s+/g, '-').toLowerCase()}`}
+                href={`/scholarships/${scholarship.title
+                  .replace(/\s+/g, '-')
+                  .toLowerCase()
+                  .replace(/[^\u0000-\u007F]/g, '') // حذف الأحرف غير اللاتينية
+                  || `scholarship-${index + 1}`}`} // استخدام قيمة احتياطية آمنة
                 className="block bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow card-hover"
               >
                 <div className="h-48 bg-gray-200 dark:bg-gray-700 relative">
@@ -320,7 +328,11 @@ export default function HomePage() {
             ].map((country, index) => (
               <Link
                 key={index}
-                href={`/countries/${country.name}`}
+                href={`/countries/${country.name
+                  .replace(/\s+/g, '-')
+                  .toLowerCase()
+                  .replace(/[^\u0000-\u007F]/g, '')
+                  || `country-${index + 1}`}`}
                 className="block bg-gray-50 dark:bg-gray-700 rounded-xl p-6 hover:shadow-md transition-shadow text-center card-hover"
               >
                 <div className="text-4xl mb-3">{country.flag}</div>
