@@ -22,14 +22,21 @@ interface Scholarship {
   title: string;
   slug: string;
   description?: string;
-  thumbnailUrl?: string;
+  image_url?: string;
   deadline?: string;
-  fundingType?: string;
-  studyDestination?: string;
-  isFeatured?: boolean;
-  categoryId?: number;
-  countryId?: number;
-  levelId?: number;
+  amount?: string;
+  currency?: string;
+  university?: string;
+  department?: string;
+  is_featured?: boolean;
+  is_fully_funded?: boolean;
+  country_id?: number;
+  level_id?: number;
+  category_id?: number;
+  created_at?: string;
+  updated_at?: string;
+  start_date?: string;
+  end_date?: string;
 }
 
 // تعريف نوع البيانات لصفحة تفاصيل الدولة
@@ -232,24 +239,59 @@ export const getServerSideProps: GetServerSideProps = async ({ params, query }) 
     const scholarshipsList = await db
       .select()
       .from(scholarships)
-      .where(eq(scholarships.countryId, country.id))
+      .where(eq(scholarships.country_id, country.id))
       .limit(limit)
       .offset(offset)
-      .orderBy(scholarships.createdAt);
+      .orderBy(scholarships.created_at);
     
     // جلب إجمالي عدد المنح للدولة
     const [{ count }] = await db
       .select({ count: sql`COUNT(*)`.mapWith(Number) })
       .from(scholarships)
-      .where(eq(scholarships.countryId, country.id));
+      .where(eq(scholarships.country_id, country.id));
     
     const totalItems = count || 0;
     const totalPages = Math.ceil(totalItems / limit);
     
+    // تحويل كائن المنحة إلى كائن قابل للتسلسل (JSON serializable)
+    const serializableScholarships = scholarshipsList.map(scholarship => {
+      // استخراج الخصائص الأساسية
+      const { 
+        id, title, slug, description, amount, currency, university, department, website,
+        is_featured, is_fully_funded, country_id, level_id, category_id, requirements,
+        application_link, image_url, content, seo_title, seo_description, seo_keywords,
+        focus_keyword, is_published
+      } = scholarship;
+      
+      // تحويل التواريخ إلى سلاسل نصية
+      const created_at = scholarship.created_at instanceof Date ? scholarship.created_at.toISOString() : 
+                        scholarship.created_at ? String(scholarship.created_at) : null;
+                        
+      const updated_at = scholarship.updated_at instanceof Date ? scholarship.updated_at.toISOString() : 
+                        scholarship.updated_at ? String(scholarship.updated_at) : null;
+                        
+      const start_date = scholarship.start_date instanceof Date ? scholarship.start_date.toISOString() : 
+                        scholarship.start_date ? String(scholarship.start_date) : null;
+                        
+      const end_date = scholarship.end_date instanceof Date ? scholarship.end_date.toISOString() : 
+                      scholarship.end_date ? String(scholarship.end_date) : null;
+                      
+      const deadline = scholarship.deadline instanceof Date ? scholarship.deadline.toISOString() : 
+                      scholarship.deadline ? String(scholarship.deadline) : null;
+      
+      // إرجاع كائن جديد مع جميع الخصائص محولة بشكل صحيح
+      return {
+        id, title, slug, description, amount, currency, university, department, website,
+        is_featured, is_fully_funded, country_id, level_id, category_id, requirements,
+        application_link, image_url, content, seo_title, seo_description, seo_keywords,
+        focus_keyword, is_published, created_at, updated_at, start_date, end_date, deadline
+      };
+    });
+    
     return {
       props: {
         country,
-        scholarships: scholarshipsList || [],
+        scholarships: serializableScholarships || [],
         totalPages,
         currentPage: page,
         totalItems,

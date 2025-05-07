@@ -124,12 +124,19 @@ export function ScholarshipCard({ scholarship, isCompact = false }: ScholarshipC
         
         <div className="flex justify-between items-center text-sm pt-3 border-t border-gray-100 dark:border-gray-700">
           <span className="text-gray-500 dark:text-gray-400">
-            {scholarship.created_at && new Date(scholarship.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' })}
+            {scholarship.created_at && 
+              (typeof scholarship.created_at === 'string'
+                ? new Date(scholarship.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' })
+                : 'تاريخ النشر')}
           </span>
           
           <span className="flex items-center text-gray-700 dark:text-gray-300 font-medium">
             <Calendar className="w-4 h-4 ml-1" />
-            آخر موعد: {scholarship.deadline ? new Date(scholarship.deadline).toLocaleDateString('ar-EG') : 'غير محدد'}
+            آخر موعد: {scholarship.deadline 
+              ? (typeof scholarship.deadline === 'string' 
+                 ? new Date(scholarship.deadline).toLocaleDateString('ar-EG')
+                 : 'تاريخ محدد') 
+              : 'غير محدد'}
           </span>
         </div>
       </div>
