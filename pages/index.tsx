@@ -549,6 +549,15 @@ export default function HomePage({ categories, countries, featuredScholarships }
 export const getServerSideProps: GetServerSideProps = async () => {
   try {
     console.log('Starting getServerSideProps...');
+    
+    // إنشاء وظيفة للتعامل مع الأخطاء بشكل آمن
+    const safeObjectEntries = (obj: any) => {
+      if (!obj || typeof obj !== 'object') {
+        console.warn('WARNING: Attempting to use Object.entries on non-object:', obj);
+        return [];
+      }
+      return Object.entries(obj);
+    };
     // استيراد الوحدات اللازمة
     const { db } = await import('../db');
     const { sql, desc } = await import('drizzle-orm');

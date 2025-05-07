@@ -22,11 +22,18 @@ export class BaseRepository<T, InsertT> {
 
     // تطبيق الفلاتر إذا تم تمريرها وكانت غير فارغة
     if (filters && typeof filters === 'object') {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && this.table[key]) {
-          query = query.where(eq(this.table[key], value));
-        }
-      });
+      // إضافة مزيد من معلومات التصحيح
+      console.log('Applying filters:', JSON.stringify(filters));
+      try {
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && this.table[key]) {
+            query = query.where(eq(this.table[key], value));
+          }
+        });
+      } catch (error) {
+        console.error('Error processing filters:', error);
+        // لا نفعل شيئاً، نستمر بدون فلاتر
+      }
     }
 
     return query as Promise<T[]>;

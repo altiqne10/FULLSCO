@@ -44,16 +44,24 @@ export class SiteSettingsController {
       // الأصل: تحويل القيم النصية من واجهة المستخدم إلى قيم منطقية
       let processedData: Record<string, any> = {};
       
+      console.log('validatedData:', validatedData);
+      
+      // التحقق من صحة البيانات قبل معالجتها
       if (validatedData && typeof validatedData === 'object') {
-        processedData = Object.entries(validatedData).reduce((result, [key, value]) => {
-          // للتعامل مع القيم المنطقية المرسلة كنصوص
-          if (typeof value === 'string' && (value === 'true' || value === 'false')) {
-            result[key] = value === 'true';
-          } else {
-            result[key] = value;
-          }
-          return result;
-        }, {} as Record<string, any>);
+        try {
+          processedData = Object.entries(validatedData).reduce((result, [key, value]) => {
+            // للتعامل مع القيم المنطقية المرسلة كنصوص
+            if (typeof value === 'string' && (value === 'true' || value === 'false')) {
+              result[key] = value === 'true';
+            } else {
+              result[key] = value;
+            }
+            return result;
+          }, {} as Record<string, any>);
+        } catch (error) {
+          console.error('Error processing validatedData:', error);
+          processedData = { ...validatedData }; // نسخ البيانات كما هي في حالة الخطأ
+        }
       }
       
       console.log('Updating site settings with data:', processedData);
