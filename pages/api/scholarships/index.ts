@@ -109,9 +109,32 @@ export default async function handler(
     console.log(`API: تم العثور على ${result.length} منحة دراسية`);
     
     // الحصول على خيارات الفلترة
-    const categoriesData = await db.select().from(categories);
-    const countriesData = await db.select().from(countries);
-    const levelsData = await db.select().from(levels);
+    const categoriesData = await db.select({
+      id: categories.id,
+      name: categories.name,
+      slug: categories.slug,
+      description: categories.description
+    }).from(categories);
+    
+    // استخدام select للحقول المحددة في الدول لتجنب خطأ flag_url
+    const countriesData = await db.select({
+      id: countries.id,
+      name: countries.name,
+      slug: countries.slug
+    }).from(countries);
+    
+    // إضافة حقل flagUrl افتراضي
+    const countriesWithFlag = countriesData.map(country => ({
+      ...country,
+      flagUrl: null, // إضافة حقل افتراضي للعلم
+    }));
+    
+    const levelsData = await db.select({
+      id: levels.id,
+      name: levels.name,
+      slug: levels.slug,
+      description: levels.description
+    }).from(levels);
     
     // تحضير البيانات للإرجاع
     const scholarshipsWithDetails = await Promise.all(

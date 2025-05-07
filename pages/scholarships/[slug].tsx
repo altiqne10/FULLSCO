@@ -574,68 +574,123 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
     // تحميل البيانات الإضافية
     let categoryInfo = null;
     if (scholarship.categoryId) {
-      const categoryData = await db.select().from(categories)
+      try {
+        // جلب حقول محددة من التصنيف
+        const categoryData = await db.select({
+          id: categories.id,
+          name: categories.name,
+          slug: categories.slug,
+          description: categories.description
+        })
+        .from(categories)
         .where(eq(categories.id, scholarship.categoryId))
         .limit(1);
-      
-      if (categoryData.length > 0) {
-        categoryInfo = categoryData[0];
+        
+        if (categoryData.length > 0) {
+          categoryInfo = categoryData[0];
+        }
+      } catch (error) {
+        console.error('Error fetching category info:', error);
+        // الاستمرار بدون معلومات التصنيف إذا حدث خطأ
       }
     }
     
     let countryInfo = null;
     if (scholarship.countryId) {
-      const countryData = await db.select().from(countries)
+      try {
+        // تجنب استخدام حقل flagUrl مباشرة وجلب الحقول الموجودة فقط
+        const countryData = await db.select({
+          id: countries.id,
+          name: countries.name,
+          slug: countries.slug
+        })
+        .from(countries)
         .where(eq(countries.id, scholarship.countryId))
         .limit(1);
-      
-      if (countryData.length > 0) {
-        countryInfo = countryData[0];
+        
+        if (countryData.length > 0) {
+          // إضافة حقل flagUrl = null لتجنب الأخطاء
+          countryInfo = {
+            ...countryData[0],
+            flagUrl: null // إضافة حقل افتراضي للعلم
+          };
+        }
+      } catch (error) {
+        console.error('Error fetching country info:', error);
+        // الاستمرار بدون معلومات البلد إذا حدث خطأ
       }
     }
     
     let levelInfo = null;
     if (scholarship.levelId) {
-      const levelData = await db.select().from(levels)
+      try {
+        // جلب حقول محددة من المستويات
+        const levelData = await db.select({
+          id: levels.id,
+          name: levels.name,
+          slug: levels.slug,
+          description: levels.description
+        })
+        .from(levels)
         .where(eq(levels.id, scholarship.levelId))
         .limit(1);
-      
-      if (levelData.length > 0) {
-        levelInfo = levelData[0];
+        
+        if (levelData.length > 0) {
+          levelInfo = levelData[0];
+        }
+      } catch (error) {
+        console.error('Error fetching level info:', error);
+        // الاستمرار بدون معلومات المستوى إذا حدث خطأ
       }
     }
     
     // الحصول على منح ذات صلة
     let relatedScholarships = [];
     
-    if (scholarship.categoryId) {
-      relatedScholarships = await db.select({
-        id: scholarships.id,
-        title: scholarships.title,
-        slug: scholarships.slug,
-        deadline: scholarships.deadline,
-        thumbnailUrl: scholarships.imageUrl,
-        isFeatured: scholarships.isFeatured
-      })
-      .from(scholarships)
-      .where(eq(scholarships.categoryId, scholarship.categoryId))
-      .where(sql`${scholarships.id} != ${scholarship.id}`)
-      .limit(3);
-    }
-    
-    // إذا لم يتم العثور على منح ذات صلة بناءً على الفئة
-    if (relatedScholarships.length === 0) {
-      relatedScholarships = await db.select({
-        id: scholarships.id,
-        title: scholarships.title,
-        slug: scholarships.slug,
-        deadline: scholarships.deadline,
-        thumbnailUrl: scholarships.imageUrl,
-        isFeatured: scholarships.isFeatured
-      })
-      .from(scholarships)
-      .where(sql`${scholarships.id} != ${scholarship.id}`)
-      .limit(3);
+    try {
+      // محاولة جلب المنح من نفس الفئة أولاً
+      if (scholarship.categoryId) {
+        const relatedByCategory = await db.select({
+          id: scholarships.id,
+          title: scholarships.title,
+          slug: scholarships.slug,
+          deadline: scholarships.deadline,
+          thumbnailUrl: scholarships.imageUrl,
+          isFeatured: scholarships.isFeatured
+        })
+        .from(scholarships)
+        .where(eq(scholarships.categoryId, scholarship.categoryId))
+        .where(sql`${scholarships.id} != ${scholarship.id}`)
+        .where(eq(scholarships.isPublished, true))
+        .limit(3);
+        
+        if (relatedByCategory && relatedByCategory.length > 0) {
+          relatedScholarships = relatedByCategory;
+        }
+      }
+      
+      // إذا لم يتم العثور على منح ذات صلة بناءً على الفئة
+      if (relatedScholarships.length === 0) {
+        const otherScholarships = await db.select({
+          id: scholarships.id,
+          title: scholarships.title,
+          slug: scholarships.slug,
+          deadline: scholarships.deadline,
+          thumbnailUrl: scholarships.imageUrl,
+          isFeatured: scholarships.isFeatured
+        })
+        .from(scholarships)
+        .where(sql`${scholarships.id} != ${scholarship.id}`)
+        .where(eq(scholarships.isPublished, true))
+        .limit(3);
+        
+        if (otherScholarships && otherScholarships.length > 0) {
+          relatedScholarships = otherScholarships;
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching related scholarships:', error);
+      // الاستمرار بدون منح ذات صلة إذا حدث خطأ
     }
     
     // إعداد بيانات المنحة
@@ -662,20 +717,24 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
       applicationEndDate: serializeDate(scholarship.applicationEndDate)
     };
     
-    // معالجة المنح ذات الصلة وتنسيق التواريخ فيها
-    const formattedRelatedScholarships = relatedScholarships.map(scholarship => {
-      // التأكد من أن slug للمنح ذات الصلة هو slug الإنجليزي المخزن في قاعدة البيانات
-      const relatedSlug = scholarship.slug || 
-                         (scholarship.title || '').toLowerCase()
-                           .replace(/\s+/g, '-')
-                           .replace(/[^\u0621-\u064A0-9a-z-]/g, '');
-                         
-      return {
-        ...scholarship,
-        slug: relatedSlug, // استخدام slug الإنجليزي المخزن
-        deadline: serializeDate(scholarship.deadline) || scholarship.deadline,
-      };
-    });
+    // معالجة المنح ذات الصلة وتنسيق التواريخ فيها - مع التحقق من وجود المصفوفة أولاً
+    const formattedRelatedScholarships = Array.isArray(relatedScholarships) 
+      ? relatedScholarships.map(scholarship => {
+          if (!scholarship) return null;
+        
+          // التأكد من أن slug للمنح ذات الصلة هو slug الإنجليزي المخزن في قاعدة البيانات
+          const relatedSlug = scholarship.slug || 
+                          (scholarship.title || '').toLowerCase()
+                            .replace(/\s+/g, '-')
+                            .replace(/[^\u0621-\u064A0-9a-z-]/g, '');
+                          
+          return {
+            ...scholarship,
+            slug: relatedSlug, // استخدام slug الإنجليزي المخزن
+            deadline: serializeDate(scholarship.deadline) || scholarship.deadline,
+          };
+        }).filter(Boolean) // التخلص من القيم null
+      : [];
     
     return {
       props: {
