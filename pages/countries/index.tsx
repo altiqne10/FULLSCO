@@ -163,32 +163,64 @@ export const getServerSideProps: GetServerSideProps = async ({ query }) => {
     const limit = parseInt(query.limit as string || '12', 10);
     const search = query.search as string;
 
-    // إنشاء عنوان URL للواجهة البرمجية
-    let apiUrl = `/api/countries?page=${page}&limit=${limit}`;
-    if (search) {
-      apiUrl += `&search=${encodeURIComponent(search)}`;
+    // استيراد API handler مباشرة
+    const handler = (await import('../api/countries/index')).default;
+    
+    // محاكاة طلب واستجابة
+    const req: any = {
+      method: 'GET',
+      query: {
+        page: page.toString(),
+        limit: limit.toString(),
+        ...(search && { search })
+      }
+    };
+    
+    // إنشاء كائن استجابة وهمي
+    let responseData: any = null;
+    const res: any = {
+      status: (code: number) => ({
+        json: (data: any) => {
+          responseData = data;
+          return res;
+        }
+      }),
+      setHeader: () => res,
+      end: () => res,
+    };
+    
+    // استدعاء API handler مباشرة
+    await handler(req, res);
+    
+    // التحقق من الاستجابة
+    if (!responseData) {
+      throw new Error('لم يتم استلام بيانات من واجهة برمجة التطبيقات');
     }
 
-    // تحديد عنوان URL الكامل للواجهة البرمجية
-    // استخدام window.location.origin في بيئة المتصفح وعنوان السيرفر في بيئة الخادم
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 
-                   (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000');
-    
-    // جلب البيانات من واجهة برمجة التطبيقات
-    const res = await fetch(`${baseUrl}${apiUrl}`);
-    const data = await res.json();
-
-    // التحقق من الاستجابة
-    if (!res.ok) {
-      throw new Error(data.error || 'حدث خطأ أثناء جلب الدول');
+    // جلب الدول من قاعدة البيانات مباشرة إذا كان واجهة API لا تعمل
+    if (!responseData.countries) {
+      const db = (await import('@/db')).db;
+      const { sql } = await import('drizzle-orm');
+      const countries = (await import('@/shared/schema')).countries;
+      
+      const countriesList = await db.select().from(countries).orderBy(countries.name);
+      
+      return {
+        props: {
+          countries: countriesList || [],
+          totalPages: 1,
+          currentPage: 1,
+          totalItems: countriesList.length || 0,
+        },
+      };
     }
 
     return {
       props: {
-        countries: data.countries || [],
-        totalPages: data.pagination?.totalPages || 1,
-        currentPage: data.pagination?.page || 1,
-        totalItems: data.pagination?.totalItems || 0,
+        countries: responseData.countries || [],
+        totalPages: responseData.pagination?.totalPages || 1,
+        currentPage: responseData.pagination?.page || 1,
+        totalItems: responseData.pagination?.totalItems || 0,
       },
     };
   } catch (error) {

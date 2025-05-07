@@ -194,31 +194,49 @@ export const getServerSideProps: GetServerSideProps = async ({ params, query }) 
     const page = parseInt(query.page as string || '1', 10);
     const limit = parseInt(query.limit as string || '9', 10);
 
-    // تحديد عنوان URL الكامل للواجهة البرمجية
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 
-                   (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000');
+    // استيراد الوحدات اللازمة
+    const { db } = await import('@/db');
+    const { eq, sql } = await import('drizzle-orm');
+    const { categories, scholarships } = await import('@/shared/schema');
     
-    // جلب تفاصيل التصنيف والمنح المرتبطة به
-    const apiUrl = `/api/categories/${slug}?page=${page}&limit=${limit}`;
-    const res = await fetch(`${baseUrl}${apiUrl}`);
-    const data = await res.json();
-
-    // التحقق من الاستجابة
-    if (!res.ok) {
-      // إذا لم يتم العثور على التصنيف، توجيه المستخدم إلى صفحة 404
-      if (res.status === 404) {
-        return { notFound: true };
-      }
-      throw new Error(data.error || 'حدث خطأ أثناء جلب تفاصيل التصنيف');
+    // جلب تفاصيل التصنيف
+    const [category] = await db
+      .select()
+      .from(categories)
+      .where(eq(categories.slug, slug as string));
+    
+    // التحقق من وجود التصنيف
+    if (!category) {
+      return { notFound: true };
     }
-
+    
+    // جلب المنح المرتبطة بالتصنيف
+    const offset = (page - 1) * limit;
+    
+    const scholarshipsList = await db
+      .select()
+      .from(scholarships)
+      .where(eq(scholarships.categoryId, category.id))
+      .limit(limit)
+      .offset(offset)
+      .orderBy(scholarships.createdAt);
+    
+    // جلب إجمالي عدد المنح للتصنيف
+    const [{ count }] = await db
+      .select({ count: sql`COUNT(*)`.mapWith(Number) })
+      .from(scholarships)
+      .where(eq(scholarships.categoryId, category.id));
+    
+    const totalItems = count || 0;
+    const totalPages = Math.ceil(totalItems / limit);
+    
     return {
       props: {
-        category: data.category,
-        scholarships: data.scholarships || [],
-        totalPages: data.pagination?.totalPages || 1,
-        currentPage: data.pagination?.page || 1,
-        totalItems: data.pagination?.totalItems || 0,
+        category,
+        scholarships: scholarshipsList || [],
+        totalPages,
+        currentPage: page,
+        totalItems,
       },
     };
   } catch (error) {

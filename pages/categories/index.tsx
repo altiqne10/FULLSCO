@@ -156,32 +156,46 @@ export const getServerSideProps: GetServerSideProps = async ({ query }) => {
     const limit = parseInt(query.limit as string || '12', 10);
     const search = query.search as string;
 
-    // إنشاء عنوان URL للواجهة البرمجية
-    let apiUrl = `/api/categories?page=${page}&limit=${limit}`;
-    if (search) {
-      apiUrl += `&search=${encodeURIComponent(search)}`;
-    }
-
-    // تحديد عنوان URL الكامل للواجهة البرمجية
-    // استخدام window.location.origin في بيئة المتصفح وعنوان السيرفر في بيئة الخادم
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 
-                   (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000');
+    // استيراد API handler مباشرة
+    const handler = (await import('../api/categories/index')).default;
     
-    // جلب البيانات من واجهة برمجة التطبيقات
-    const res = await fetch(`${baseUrl}${apiUrl}`);
-    const data = await res.json();
-
+    // محاكاة طلب واستجابة
+    const req: any = {
+      method: 'GET',
+      query: {
+        page: page.toString(),
+        limit: limit.toString(),
+        ...(search && { search })
+      }
+    };
+    
+    // إنشاء كائن استجابة وهمي
+    let responseData: any = null;
+    const res: any = {
+      status: (code: number) => ({
+        json: (data: any) => {
+          responseData = data;
+          return res;
+        }
+      }),
+      setHeader: () => res,
+      end: () => res,
+    };
+    
+    // استدعاء API handler مباشرة
+    await handler(req, res);
+    
     // التحقق من الاستجابة
-    if (!res.ok) {
-      throw new Error(data.error || 'حدث خطأ أثناء جلب التصنيفات');
+    if (!responseData) {
+      throw new Error('لم يتم استلام بيانات من واجهة برمجة التطبيقات');
     }
 
     return {
       props: {
-        categories: data.categories || [],
-        totalPages: data.pagination?.totalPages || 1,
-        currentPage: data.pagination?.page || 1,
-        totalItems: data.pagination?.totalItems || 0,
+        categories: responseData.categories || [],
+        totalPages: responseData.pagination?.totalPages || 1,
+        currentPage: responseData.pagination?.page || 1,
+        totalItems: responseData.pagination?.totalItems || 0,
       },
     };
   } catch (error) {
