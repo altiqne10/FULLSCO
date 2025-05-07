@@ -41,7 +41,7 @@ export function ScholarshipCard({ scholarship, isCompact = false }: ScholarshipC
   
   return (
     <Link
-      href={`/scholarships/${encodeURIComponent(scholarship.slug)}`}
+      href={`/scholarships/${scholarship.slug}`}
       className={`group block bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all ${
         isHovered ? 'ring-2 ring-primary' : ''
       }`}

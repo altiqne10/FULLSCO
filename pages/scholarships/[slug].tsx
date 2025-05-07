@@ -499,23 +499,62 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
       console.log(`لم يتم العثور على المنحة باستخدام slug مباشر: ${slug}, محاولة بحث أخرى...`);
       
       // محاولة البحث باستخدام عنوان المنحة المشابه للـ slug
-      const allScholarships = await db.select().from(scholarships).limit(20);
+      const allScholarships = await db.select().from(scholarships);
       
       // البحث عن عنوان مشابه للـ slug
-      const arabicSlug = decodeURIComponent(slug);
-      const possibleMatch = allScholarships.find(s => {
-        // تحويل العنوان إلى نموذج slug والمقارنة
-        const titleAsSlug = s.title
-          .toLowerCase()
-          .replace(/\s+/g, '-')
-          .replace(/[^\u0621-\u064A0-9a-z-]/g, '');
+      try {
+        const arabicSlug = decodeURIComponent(slug);
+        
+        // طريقة 1: البحث عن تطابق دقيق في العنوان
+        let possibleMatch = allScholarships.find(s => {
+          const titleAsSlug = s.title
+            .replace(/\s+/g, '-')
+            .replace(/[^\u0621-\u064A0-9a-z-]/g, '')
+            .toLowerCase();
           
-        return titleAsSlug.includes(arabicSlug) || arabicSlug.includes(titleAsSlug);
-      });
-      
-      if (possibleMatch) {
-        console.log(`تم العثور على منحة مطابقة محتملة: ${possibleMatch.title}`);
-        scholarshipData = [possibleMatch];
+          return titleAsSlug === arabicSlug.toLowerCase();
+        });
+        
+        // طريقة 2: البحث عن تطابق جزئي في العنوان إذا لم نجد تطابقًا دقيقًا
+        if (!possibleMatch) {
+          possibleMatch = allScholarships.find(s => {
+            const titleAsSlug = s.title
+              .replace(/\s+/g, '-')
+              .replace(/[^\u0621-\u064A0-9a-z-]/g, '')
+              .toLowerCase();
+            
+            // تطابق جزئي في أي من الاتجاهين
+            return titleAsSlug.includes(arabicSlug.toLowerCase()) || 
+                   arabicSlug.toLowerCase().includes(titleAsSlug);
+          });
+        }
+        
+        // طريقة 3: مقارنة الكلمات الرئيسية إذا كان الـ slug يحتوي على أكثر من كلمة
+        if (!possibleMatch && arabicSlug.includes('-')) {
+          const slugKeywords = arabicSlug.split('-');
+          
+          possibleMatch = allScholarships.find(s => {
+            // حساب عدد الكلمات المشتركة بين slug والعنوان
+            let matchCount = 0;
+            const title = s.title.toLowerCase();
+            
+            for (const keyword of slugKeywords) {
+              if (title.includes(keyword.toLowerCase())) {
+                matchCount++;
+              }
+            }
+            
+            // إذا كان هناك على الأقل 2 كلمات مشتركة (أو 50% من الكلمات)
+            return matchCount >= Math.min(2, Math.floor(slugKeywords.length / 2));
+          });
+        }
+        
+        if (possibleMatch) {
+          console.log(`تم العثور على منحة مطابقة محتملة: ${possibleMatch.title}`);
+          scholarshipData = [possibleMatch];
+        }
+      } catch (e) {
+        console.error('خطأ في معالجة الـ slug العربي:', e);
       }
     }
     
@@ -624,10 +663,19 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
     };
     
     // معالجة المنح ذات الصلة وتنسيق التواريخ فيها
-    const formattedRelatedScholarships = relatedScholarships.map(scholarship => ({
-      ...scholarship,
-      deadline: serializeDate(scholarship.deadline) || scholarship.deadline,
-    }));
+    const formattedRelatedScholarships = relatedScholarships.map(scholarship => {
+      // التأكد من أن slug للمنح ذات الصلة هو slug الإنجليزي المخزن في قاعدة البيانات
+      const relatedSlug = scholarship.slug || 
+                         (scholarship.title || '').toLowerCase()
+                           .replace(/\s+/g, '-')
+                           .replace(/[^\u0621-\u064A0-9a-z-]/g, '');
+                         
+      return {
+        ...scholarship,
+        slug: relatedSlug, // استخدام slug الإنجليزي المخزن
+        deadline: serializeDate(scholarship.deadline) || scholarship.deadline,
+      };
+    });
     
     return {
       props: {
