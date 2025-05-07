@@ -42,25 +42,43 @@ export default function ContactPage() {
     setFormStatus({});
     
     try {
-      // محاكاة لإرسال الرسالة
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // تنظيف النموذج
-      setFormData({
-        name: '',
-        email: '',
-        subject: '',
-        message: ''
+      // إرسال البيانات إلى API
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
       });
       
-      // عرض رسالة نجاح
-      setFormStatus({
-        success: 'تم إرسال رسالتك بنجاح. سنتواصل معك قريبًا.'
-      });
+      const result = await response.json();
+      
+      if (response.ok) {
+        // تنظيف النموذج
+        setFormData({
+          name: '',
+          email: '',
+          subject: '',
+          message: ''
+        });
+        
+        // عرض رسالة نجاح
+        setFormStatus({
+          success: result.message || 'تم إرسال رسالتك بنجاح. سنتواصل معك قريبًا.'
+        });
+      } else {
+        // عرض رسالة الخطأ من API
+        setFormStatus({
+          error: result.error || 'حدث خطأ أثناء إرسال الرسالة. الرجاء المحاولة مرة أخرى.'
+        });
+        
+        // إذا كان هناك تفاصيل للأخطاء، يمكن معالجتها هنا
+        console.error('Form validation errors:', result.details);
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       setFormStatus({
-        error: 'حدث خطأ أثناء إرسال الرسالة. الرجاء المحاولة مرة أخرى.'
+        error: 'حدث خطأ في الاتصال بالخادم. الرجاء التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.'
       });
     } finally {
       setIsSubmitting(false);
