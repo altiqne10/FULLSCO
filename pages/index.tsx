@@ -550,14 +550,8 @@ export const getServerSideProps: GetServerSideProps = async () => {
   try {
     console.log('Starting getServerSideProps...');
     
-    // إنشاء وظيفة للتعامل مع الأخطاء بشكل آمن
-    const safeObjectEntries = (obj: any) => {
-      if (!obj || typeof obj !== 'object') {
-        console.warn('WARNING: Attempting to use Object.entries on non-object:', obj);
-        return [];
-      }
-      return Object.entries(obj);
-    };
+    // استيراد الوظائف المساعدة من lib/utils
+    const { safeObjectEntries, safeReduce, formatDate, debug } = await import('../lib/utils');
     // استيراد الوحدات اللازمة
     const { db } = await import('../db');
     const { sql, desc } = await import('drizzle-orm');
@@ -659,13 +653,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
         focusKeyword, isPublished
       } = scholarship;
       
-      // تحويل التواريخ إلى سلاسل نصية لضمان أنها قابلة للتسلسل (JSON serializable)
-      const formatDate = (date: Date | string | null | undefined) => {
-        if (!date) return null;
-        if (date instanceof Date) return date.toISOString();
-        return String(date);
-      };
-      
+      // استخدام الوظيفة المستوردة لتنسيق التواريخ
       const createdAtStr = formatDate(scholarship.createdAt);
       const updatedAtStr = formatDate(scholarship.updatedAt);
       const startDateStr = formatDate(scholarship.startDate);
