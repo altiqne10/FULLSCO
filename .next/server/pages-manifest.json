@@ -3,9 +3,10 @@
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
   "/": "pages/index.js",
-  "/api/scholarships/featured": "pages/api/scholarships/featured.js",
-  "/countries/[slug]": "pages/countries/[slug].js",
-  "/categories/[slug]": "pages/categories/[slug].js",
+  "/scholarships": "pages/scholarships.js",
+  "/scholarships/[slug]": "pages/scholarships/[slug].js",
+  "/api/scholarships": "pages/api/scholarships.js",
   "/404": "pages/404.js",
+  "/api/scholarships/featured": "pages/api/scholarships/featured.js",
   "/api/site-settings": "pages/api/site-settings.js"
 }

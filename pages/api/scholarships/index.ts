@@ -79,13 +79,21 @@ export default async function handler(
     // تطبيق فلتر الفئة إذا كان موجودًا
     if (category) {
       try {
-        const categoryData = await db.select().from(categories)
+        // استخدام تحديد حقول صريح لتجنب أي مشاكل مع الحقول غير الموجودة
+        const categoryData = await db.select({
+          id: categories.id,
+          name: categories.name,
+          slug: categories.slug
+        }).from(categories)
           .where(sql`${categories.slug} = ${category}`)
           .limit(1);
           
         if (categoryData.length > 0) {
           const categoryId = categoryData[0].id;
           query = query.where(sql`${scholarships.categoryId} = ${categoryId}`);
+          console.log(`تصفية حسب الفئة: ${category} (ID: ${categoryId})`);
+        } else {
+          console.log(`لم يتم العثور على فئة بالاسم: ${category}`);
         }
       } catch (err) {
         console.error('Error applying category filter:', err);
@@ -95,13 +103,21 @@ export default async function handler(
     // تطبيق فلتر البلد إذا كان موجودًا
     if (country) {
       try {
-        const countryData = await db.select().from(countries)
+        // استخدام تحديد حقول صريح لتجنب أي مشاكل مع الحقول غير الموجودة
+        const countryData = await db.select({
+          id: countries.id,
+          name: countries.name,
+          slug: countries.slug
+        }).from(countries)
           .where(sql`${countries.slug} = ${country}`)
           .limit(1);
           
         if (countryData.length > 0) {
           const countryId = countryData[0].id;
           query = query.where(sql`${scholarships.countryId} = ${countryId}`);
+          console.log(`تصفية حسب الدولة: ${country} (ID: ${countryId})`);
+        } else {
+          console.log(`لم يتم العثور على دولة بالاسم: ${country}`);
         }
       } catch (err) {
         console.error('Error applying country filter:', err);
@@ -111,13 +127,21 @@ export default async function handler(
     // تطبيق فلتر المستوى إذا كان موجودًا
     if (level) {
       try {
-        const levelData = await db.select().from(levels)
+        // استخدام تحديد حقول صريح لتجنب أي مشاكل مع الحقول غير الموجودة
+        const levelData = await db.select({
+          id: levels.id,
+          name: levels.name,
+          slug: levels.slug
+        }).from(levels)
           .where(sql`${levels.slug} = ${level}`)
           .limit(1);
           
         if (levelData.length > 0) {
           const levelId = levelData[0].id;
           query = query.where(sql`${scholarships.levelId} = ${levelId}`);
+          console.log(`تصفية حسب المستوى: ${level} (ID: ${levelId})`);
+        } else {
+          console.log(`لم يتم العثور على مستوى بالاسم: ${level}`);
         }
       } catch (err) {
         console.error('Error applying level filter:', err);
