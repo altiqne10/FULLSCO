@@ -160,9 +160,14 @@ export default async function handler(
       description: levels.description
     }).from(levels);
     
+    // إضافة تسجيل تفصيلي للتشخيص
+    console.log('DEBUG - قبل تحضير البيانات للإرجاع');
+    console.log('DEBUG - result structure:', JSON.stringify(result).substring(0, 100) + '...');
+    
     // تحضير البيانات للإرجاع
     const scholarshipsWithDetails = await Promise.all(
       result.map(async (scholarship) => {
+        console.log('DEBUG - scholarship id:', scholarship.id);
         let category = null;
         let country = null;
         let level = null;
