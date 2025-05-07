@@ -4,28 +4,29 @@ import Link from 'next/link';
 import { Calendar, Globe, Award, GraduationCap } from 'lucide-react';
 import { Scholarship } from '@/shared/schema';
 
-// الواجهة المعدلة لبيانات المنحة الدراسية
+// الواجهة المعدلة لبيانات المنحة الدراسية - تم تحديثها لتتوافق مع camelCase
 interface ScholarshipCardData {
   id: number;
   title: string;
   slug: string;
   description?: string;
-  image_url?: string; // الاسم الفعلي في قاعدة البيانات
-  is_featured?: boolean; // الاسم الفعلي في قاعدة البيانات
-  is_fully_funded?: boolean; // الاسم الفعلي في قاعدة البيانات
+  thumbnailUrl?: string; // حقل الصورة الجديد
+  imageUrl?: string; // الاسم السابق في قاعدة البيانات
+  isFeatured?: boolean; // تم تغييره من is_featured
+  isFullyFunded?: boolean; // تم تغييره من is_fully_funded
   deadline?: string | null;
   currency?: string;
   amount?: string;
   university?: string;
   department?: string;
-  category_id?: number; // الاسم الفعلي في قاعدة البيانات
-  country_id?: number; // الاسم الفعلي في قاعدة البيانات
-  level_id?: number; // الاسم الفعلي في قاعدة البيانات
+  categoryId?: number; // تم تغييره من category_id
+  countryId?: number; // تم تغييره من country_id
+  levelId?: number; // تم تغييره من level_id
   category?: { id: number; name: string; slug: string };
   country?: { id: number; name: string; slug: string };
   level?: { id: number; name: string; slug: string };
-  created_at?: string | Date; // الاسم الفعلي في قاعدة البيانات
-  updated_at?: string | Date; // الاسم الفعلي في قاعدة البيانات
+  createdAt?: string | Date; // تم تغييره من created_at
+  updatedAt?: string | Date; // تم تغييره من updated_at
 }
 
 interface ScholarshipCardProps {
@@ -51,9 +52,9 @@ export function ScholarshipCard({ scholarship, isCompact = false }: ScholarshipC
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="relative h-48 bg-gray-200 dark:bg-gray-700">
-        {scholarship.image_url ? (
+        {scholarship.thumbnailUrl || scholarship.imageUrl ? (
           <Image
-            src={scholarship.image_url || '/placeholder-scholarship.jpg'}
+            src={scholarship.thumbnailUrl || scholarship.imageUrl || '/placeholder-scholarship.jpg'}
             alt={scholarship.title}
             fill
             className="object-cover"
@@ -69,7 +70,7 @@ export function ScholarshipCard({ scholarship, isCompact = false }: ScholarshipC
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent"></div>
         
         {/* شارة المنح المميزة */}
-        {scholarship.is_featured && (
+        {scholarship.isFeatured && (
           <div className="absolute top-4 right-4 bg-amber-500 text-white text-xs px-2 py-1 rounded-full">
             منحة مميزة
           </div>
@@ -96,19 +97,19 @@ export function ScholarshipCard({ scholarship, isCompact = false }: ScholarshipC
         )}
         
         <div className="flex flex-wrap gap-2 mb-3">
-          {scholarship.category_id && (
+          {scholarship.categoryId && (
             <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 px-2 py-1 rounded-full">
               {scholarship.category?.name || 'منحة دراسية'}
             </span>
           )}
           
-          {scholarship.level_id && (
+          {scholarship.levelId && (
             <span className="text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-100 px-2 py-1 rounded-full">
               {scholarship.level?.name || 'جميع المستويات'}
             </span>
           )}
           
-          {scholarship.is_fully_funded && (
+          {scholarship.isFullyFunded && (
             <span className="text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 px-2 py-1 rounded-full">
               <Award className="inline-block w-3 h-3 mr-1" />
               ممولة بالكامل
@@ -124,9 +125,9 @@ export function ScholarshipCard({ scholarship, isCompact = false }: ScholarshipC
         
         <div className="flex justify-between items-center text-sm pt-3 border-t border-gray-100 dark:border-gray-700">
           <span className="text-gray-500 dark:text-gray-400">
-            {scholarship.created_at && 
-              (typeof scholarship.created_at === 'string'
-                ? new Date(scholarship.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' })
+            {scholarship.createdAt && 
+              (typeof scholarship.createdAt === 'string'
+                ? new Date(scholarship.createdAt).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' })
                 : 'تاريخ النشر')}
           </span>
           
