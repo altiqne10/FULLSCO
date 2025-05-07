@@ -49,15 +49,23 @@ export class SiteSettingsController {
       // التحقق من صحة البيانات قبل معالجتها
       if (validatedData && typeof validatedData === 'object') {
         try {
-          processedData = Object.entries(validatedData).reduce((result, [key, value]) => {
-            // للتعامل مع القيم المنطقية المرسلة كنصوص
-            if (typeof value === 'string' && (value === 'true' || value === 'false')) {
-              result[key] = value === 'true';
-            } else {
-              result[key] = value;
-            }
-            return result;
-          }, {} as Record<string, any>);
+          // نسخة أكثر أمانًا للتعامل مع البيانات
+          const safeData = validatedData || {};
+          
+          // تحديث طريقة المعالجة لتجنب مشاكل null أو undefined
+          if (Object.keys(safeData).length > 0) {
+            processedData = Object.entries(safeData).reduce((result, [key, value]) => {
+              // للتعامل مع القيم المنطقية المرسلة كنصوص
+              if (typeof value === 'string' && (value === 'true' || value === 'false')) {
+                result[key] = value === 'true';
+              } else {
+                result[key] = value;
+              }
+              return result;
+            }, {} as Record<string, any>);
+          } else {
+            processedData = {}; // إرجاع كائن فارغ إذا لم تكن هناك مفاتيح
+          }
         } catch (error) {
           console.error('Error processing validatedData:', error);
           processedData = { ...validatedData }; // نسخ البيانات كما هي في حالة الخطأ
