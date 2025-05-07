@@ -487,10 +487,37 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
     }
     
     // استخدام قاعدة البيانات مباشرة
-    // الحصول على المنحة الدراسية
-    const scholarshipData = await db.select().from(scholarships)
+    // البحث من خلال slug الإنجليزي أو العربي
+    // أولاً، محاولة البحث باستخدام الـ slug كما هو (يمكن أن يكون بالإنجليزية)
+    let scholarshipData = await db.select().from(scholarships)
       .where(eq(scholarships.slug, slug))
       .limit(1);
+    
+    // إذا لم يتم العثور على نتائج، قد يكون slug عربي وتم تحويله إلى URL encoded
+    // لذلك نبحث في جميع المنح لمقارنة العنوان
+    if (!scholarshipData || scholarshipData.length === 0) {
+      console.log(`لم يتم العثور على المنحة باستخدام slug مباشر: ${slug}, محاولة بحث أخرى...`);
+      
+      // محاولة البحث باستخدام عنوان المنحة المشابه للـ slug
+      const allScholarships = await db.select().from(scholarships).limit(20);
+      
+      // البحث عن عنوان مشابه للـ slug
+      const arabicSlug = decodeURIComponent(slug);
+      const possibleMatch = allScholarships.find(s => {
+        // تحويل العنوان إلى نموذج slug والمقارنة
+        const titleAsSlug = s.title
+          .toLowerCase()
+          .replace(/\s+/g, '-')
+          .replace(/[^\u0621-\u064A0-9a-z-]/g, '');
+          
+        return titleAsSlug.includes(arabicSlug) || arabicSlug.includes(titleAsSlug);
+      });
+      
+      if (possibleMatch) {
+        console.log(`تم العثور على منحة مطابقة محتملة: ${possibleMatch.title}`);
+        scholarshipData = [possibleMatch];
+      }
+    }
     
     console.log(`تم العثور على ${scholarshipData.length} منحة دراسية`);
     

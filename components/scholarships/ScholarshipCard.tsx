@@ -4,8 +4,30 @@ import Link from 'next/link';
 import { Calendar, Globe, Award, GraduationCap } from 'lucide-react';
 import { Scholarship } from '@/shared/schema';
 
+// الواجهة المعدلة لبيانات المنحة الدراسية
+interface ScholarshipCardData {
+  id: number;
+  title: string;
+  slug: string;
+  description?: string;
+  thumbnailUrl?: string;
+  imageUrl?: string; // بعض المنح تستخدم imageUrl بدلاً من thumbnailUrl
+  isFeatured?: boolean;
+  deadline?: string | null;
+  fundingType?: string;
+  studyDestination?: string;
+  categoryId?: number;
+  countryId?: number;
+  levelId?: number;
+  category?: { id: number; name: string; slug: string };
+  country?: { id: number; name: string; slug: string };
+  level?: { id: number; name: string; slug: string };
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+}
+
 interface ScholarshipCardProps {
-  scholarship: Scholarship;
+  scholarship: ScholarshipCardData;
   isCompact?: boolean;
 }
 
@@ -19,7 +41,7 @@ export function ScholarshipCard({ scholarship, isCompact = false }: ScholarshipC
   
   return (
     <Link
-      href={`/scholarships/${scholarship.slug}`}
+      href={`/scholarships/${encodeURIComponent(scholarship.slug)}`}
       className={`group block bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all ${
         isHovered ? 'ring-2 ring-primary' : ''
       }`}
@@ -27,9 +49,9 @@ export function ScholarshipCard({ scholarship, isCompact = false }: ScholarshipC
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="relative h-48 bg-gray-200 dark:bg-gray-700">
-        {scholarship.thumbnailUrl ? (
+        {(scholarship.thumbnailUrl || scholarship.imageUrl) ? (
           <Image
-            src={scholarship.thumbnailUrl}
+            src={scholarship.thumbnailUrl || scholarship.imageUrl || '/placeholder-scholarship.jpg'}
             alt={scholarship.title}
             fill
             className="object-cover"
@@ -92,12 +114,12 @@ export function ScholarshipCard({ scholarship, isCompact = false }: ScholarshipC
         
         <div className="flex justify-between items-center text-sm pt-3 border-t border-gray-100 dark:border-gray-700">
           <span className="text-gray-500 dark:text-gray-400">
-            {new Date(scholarship.createdAt).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' })}
+            {scholarship.createdAt && new Date(scholarship.createdAt).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' })}
           </span>
           
           <span className="flex items-center text-gray-700 dark:text-gray-300 font-medium">
             <Calendar className="w-4 h-4 ml-1" />
-            آخر موعد: {new Date(scholarship.deadline).toLocaleDateString('ar-EG')}
+            آخر موعد: {scholarship.deadline ? new Date(scholarship.deadline).toLocaleDateString('ar-EG') : 'غير محدد'}
           </span>
         </div>
       </div>
