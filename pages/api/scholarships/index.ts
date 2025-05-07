@@ -283,7 +283,7 @@ export default async function handler(
             }
             
             // تحضير الصورة المصغرة
-            let thumbnailUrl = '/images/default-scholarship.png'; // قيمة افتراضية
+            let thumbnailUrl = '/images/default-scholarship.svg'; // قيمة افتراضية - تم التحويل إلى SVG
             if (scholarship.imageUrl) {
               thumbnailUrl = scholarship.imageUrl;
             }
