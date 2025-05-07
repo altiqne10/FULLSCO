@@ -558,6 +558,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
     const { categories, countries, scholarships, levels } = await import('../shared/schema');
 
     // جلب التصنيفات مع عدد المنح الدراسية لكل تصنيف
+    // العودة إلى منهج Drizzle ORM
     const categoriesWithCount = await db
       .select({
         id: categories.id,
@@ -572,13 +573,12 @@ export const getServerSideProps: GetServerSideProps = async () => {
       .orderBy(sql`count(${scholarships.id}) DESC`)
       .limit(8);
 
-    // جلب الدول مع عدد المنح الدراسية لكل دولة
+    // جلب الدول مع عدد المنح الدراسية لكل دولة بدون حقل flagUrl
     const countriesWithCount = await db
       .select({
         id: countries.id,
         name: countries.name,
         slug: countries.slug,
-        // تجنب استخدام flagUrl حتى يتم تحديث قاعدة البيانات
         scholarshipCount: sql`count(${scholarships.id})`.mapWith(Number),
       })
       .from(countries)
@@ -586,16 +586,47 @@ export const getServerSideProps: GetServerSideProps = async () => {
       .groupBy(countries.id)
       .orderBy(sql`count(${scholarships.id}) DESC`)
       .limit(8);
-      
-    // إضافة حقل flagUrl بشكل يدوي لكل دولة
+    
+    // إضافة حقل flagUrl افتراضي لكل دولة بعد استرجاع البيانات من قاعدة البيانات
+    // تعديل المتغير الذي سيتم استخدامه في كائن الإرجاع النهائي
     const countriesWithFlags = countriesWithCount.map(country => ({
       ...country,
-      flagUrl: null // حقل فارغ للآن حتى يتم تحديث البنية
+      flagUrl: null // حقل افتراضي للعلم حتى يتم إضافته للبنية
     }));
 
-    // جلب المنح الدراسية المميزة مع التصنيفات والدول والمستويات المرتبطة بها
+    // جلب المنح الدراسية المميزة بطريقة أكثر أمانًا
+    // استخدام Drizzle ORM بدلاً من SQL المباشر
     const featuredScholarshipsQuery = await db
-      .select()
+      .select({
+        id: scholarships.id,
+        title: scholarships.title,
+        slug: scholarships.slug,
+        description: scholarships.description,
+        amount: scholarships.amount,
+        currency: scholarships.currency,
+        university: scholarships.university,
+        department: scholarships.department,
+        website: scholarships.website,
+        isFeatured: scholarships.isFeatured,
+        isFullyFunded: scholarships.isFullyFunded,
+        countryId: scholarships.countryId,
+        levelId: scholarships.levelId,
+        categoryId: scholarships.categoryId,
+        requirements: scholarships.requirements,
+        applicationLink: scholarships.applicationLink,
+        imageUrl: scholarships.imageUrl,
+        content: scholarships.content,
+        seoTitle: scholarships.seoTitle,
+        seoDescription: scholarships.seoDescription,
+        seoKeywords: scholarships.seoKeywords,
+        focusKeyword: scholarships.focusKeyword,
+        isPublished: scholarships.isPublished,
+        createdAt: scholarships.createdAt,
+        updatedAt: scholarships.updatedAt,
+        startDate: scholarships.startDate,
+        endDate: scholarships.endDate,
+        deadline: scholarships.deadline
+      })
       .from(scholarships)
       .where(sql`${scholarships.isFeatured} = true AND ${scholarships.isPublished} = true`)
       .orderBy(sql`${scholarships.createdAt} DESC`)
@@ -608,51 +639,66 @@ export const getServerSideProps: GetServerSideProps = async () => {
     const safeScholarshipsArray = Array.isArray(featuredScholarshipsQuery) ? featuredScholarshipsQuery : [];
     
     const featuredScholarshipsPromises = safeScholarshipsArray.map(async (scholarship) => {
-      // جلب التصنيف
+      // جلب التصنيف بطريقة آمنة
       let category = null;
       if (scholarship.categoryId) {
-        const [categoryData] = await db
-          .select()
-          .from(categories)
-          .where(sql`${categories.id} = ${scholarship.categoryId}`);
-        if (categoryData) {
-          category = {
-            id: categoryData.id,
-            name: categoryData.name,
-            slug: categoryData.slug
-          };
+        try {
+          const categoryResult = await db.execute(sql`
+            SELECT id, name, slug FROM categories WHERE id = ${scholarship.categoryId}
+          `);
+          
+          if (categoryResult && categoryResult.length > 0) {
+            const categoryData = categoryResult[0];
+            category = {
+              id: categoryData.id,
+              name: categoryData.name,
+              slug: categoryData.slug
+            };
+          }
+        } catch (error) {
+          console.error('Error fetching category:', error);
         }
       }
 
-      // جلب الدولة
+      // جلب الدولة بطريقة آمنة
       let country = null;
       if (scholarship.countryId) {
-        const [countryData] = await db
-          .select()
-          .from(countries)
-          .where(sql`${countries.id} = ${scholarship.countryId}`);
-        if (countryData) {
-          country = {
-            id: countryData.id,
-            name: countryData.name,
-            slug: countryData.slug
-          };
+        try {
+          const countryResult = await db.execute(sql`
+            SELECT id, name, slug FROM countries WHERE id = ${scholarship.countryId}
+          `);
+          
+          if (countryResult && countryResult.length > 0) {
+            const countryData = countryResult[0];
+            country = {
+              id: countryData.id,
+              name: countryData.name,
+              slug: countryData.slug
+            };
+          }
+        } catch (error) {
+          console.error('Error fetching country:', error);
         }
       }
 
-      // جلب المستوى الدراسي
+      // جلب المستوى الدراسي بطريقة آمنة
       let level = null;
       if (scholarship.levelId) {
-        const [levelData] = await db
-          .select()
-          .from(levels)
-          .where(sql`${levels.id} = ${scholarship.levelId}`);
-        if (levelData) {
-          level = {
-            id: levelData.id,
-            name: levelData.name,
-            slug: levelData.slug
-          };
+        try {
+          const levelResult = await db.execute(sql`
+            SELECT id, name, slug FROM levels WHERE id = ${scholarship.levelId}
+          `);
+          
+          if (levelResult && levelResult.length > 0) {
+            const levelData = levelResult[0];
+            level = {
+              id: levelData.id,
+              name: levelData.name,
+              slug: levelData.slug
+            };
+          }
+        } catch (error) {
+          console.error('Error fetching level:', error);
         }
       }
 
@@ -739,7 +785,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
     return {
       props: {
         categories: categoriesWithCount || [],
-        countries: countriesWithCount || [],
+        countries: countriesWithFlags || [], // استخدام المتغير مع حقل flagUrl المضاف يدويًا
         featuredScholarships: featuredScholarships || [],
       },
     };
