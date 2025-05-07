@@ -45,7 +45,7 @@ export default async function handler(
     // حساب الصفحة الحالية والحد
     const offset = (page - 1) * limit;
     
-    // بناء استعلام أساسي مع تحديد الحقول المطلوبة
+    // بناء استعلام أساسي
     let query = db.select({
       id: scholarships.id,
       title: scholarships.title,
@@ -68,37 +68,63 @@ export default async function handler(
       isPublished: scholarships.isPublished
     }).from(scholarships);
     
-    // تطبيق الفلاتر
+    // تطبيق فلتر البحث إذا كان موجودًا
     if (search) {
-      query = query.where(sql`${scholarships.title} ILIKE ${'%' + search + '%'} OR ${scholarships.description} ILIKE ${'%' + search + '%'}`);
+      query = query.where(
+        sql`${scholarships.title} ILIKE ${'%' + search + '%'} OR 
+        ${scholarships.description} ILIKE ${'%' + search + '%'}`
+      );
     }
     
+    // تطبيق فلتر الفئة إذا كان موجودًا
     if (category) {
-      const categoryData = await db.select().from(categories).where(sql`${categories.slug} = ${category}`).limit(1);
-      if (categoryData.length > 0) {
-        const categoryId = categoryData[0].id;
-        query = query.where(sql`${scholarships.categoryId} = ${categoryId}`);
+      try {
+        const categoryData = await db.select().from(categories)
+          .where(sql`${categories.slug} = ${category}`)
+          .limit(1);
+          
+        if (categoryData.length > 0) {
+          const categoryId = categoryData[0].id;
+          query = query.where(sql`${scholarships.categoryId} = ${categoryId}`);
+        }
+      } catch (err) {
+        console.error('Error applying category filter:', err);
       }
     }
     
+    // تطبيق فلتر البلد إذا كان موجودًا
     if (country) {
-      const countryData = await db.select().from(countries).where(sql`${countries.slug} = ${country}`).limit(1);
-      if (countryData.length > 0) {
-        const countryId = countryData[0].id;
-        query = query.where(sql`${scholarships.countryId} = ${countryId}`);
+      try {
+        const countryData = await db.select().from(countries)
+          .where(sql`${countries.slug} = ${country}`)
+          .limit(1);
+          
+        if (countryData.length > 0) {
+          const countryId = countryData[0].id;
+          query = query.where(sql`${scholarships.countryId} = ${countryId}`);
+        }
+      } catch (err) {
+        console.error('Error applying country filter:', err);
       }
     }
     
+    // تطبيق فلتر المستوى إذا كان موجودًا
     if (level) {
-      const levelData = await db.select().from(levels).where(sql`${levels.slug} = ${level}`).limit(1);
-      if (levelData.length > 0) {
-        const levelId = levelData[0].id;
-        query = query.where(sql`${scholarships.levelId} = ${levelId}`);
+      try {
+        const levelData = await db.select().from(levels)
+          .where(sql`${levels.slug} = ${level}`)
+          .limit(1);
+          
+        if (levelData.length > 0) {
+          const levelId = levelData[0].id;
+          query = query.where(sql`${scholarships.levelId} = ${levelId}`);
+        }
+      } catch (err) {
+        console.error('Error applying level filter:', err);
       }
     }
     
-    // تعليق استعلام نوع التمويل حيث أنه غير متوفر في الهيكلية الحالية
-    // التحقق من وجود isFullyFunded بدلاً منه
+    // تطبيق فلتر نوع التمويل إذا كان موجودًا
     if (fundingType === 'fully-funded') {
       query = query.where(sql`${scholarships.isFullyFunded} = true`);
     } else if (fundingType === 'partial') {
@@ -124,171 +150,235 @@ export default async function handler(
     }
     
     // الحصول على إجمالي عدد النتائج
-    const countResult = await db.select({ count: count() }).from(scholarships);
-    const total = countResult[0].count;
+    let total = 0;
+    try {
+      const countResult = await db.select({ count: count() }).from(scholarships);
+      total = Number(countResult[0].count);
+    } catch (err) {
+      console.error('Error counting total scholarships:', err);
+    }
     
     // الحصول على قائمة المنح
-    const result = await query.limit(limit).offset(offset);
-    
-    console.log(`API: تم العثور على ${result.length} منحة دراسية`);
+    let result = [];
+    try {
+      result = await query.limit(limit).offset(offset);
+      console.log(`API: تم العثور على ${result.length} منحة دراسية`);
+    } catch (err) {
+      console.error('Error fetching scholarships:', err);
+    }
     
     // الحصول على خيارات الفلترة
-    const categoriesData = await db.select({
-      id: categories.id,
-      name: categories.name,
-      slug: categories.slug,
-      description: categories.description
-    }).from(categories);
+    let categoriesData = [];
+    try {
+      categoriesData = await db.select({
+        id: categories.id,
+        name: categories.name,
+        slug: categories.slug
+      }).from(categories);
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+    }
     
-    // استخدام select للحقول المحددة في الدول لتجنب خطأ flag_url
-    const countriesData = await db.select({
-      id: countries.id,
-      name: countries.name,
-      slug: countries.slug
-    }).from(countries);
+    let countriesData = [];
+    try {
+      countriesData = await db.select({
+        id: countries.id,
+        name: countries.name,
+        slug: countries.slug
+      }).from(countries);
+    } catch (err) {
+      console.error('Error fetching countries:', err);
+    }
     
-    // إضافة حقل flagUrl افتراضي
+    // إضافة حقل flagUrl افتراضي لتجنب أخطاء بيانات الدول
     const countriesWithFlag = countriesData.map(country => ({
       ...country,
-      flagUrl: null, // إضافة حقل افتراضي للعلم
+      flagUrl: null
     }));
     
-    const levelsData = await db.select({
-      id: levels.id,
-      name: levels.name,
-      slug: levels.slug,
-      description: levels.description
-    }).from(levels);
+    let levelsData = [];
+    try {
+      levelsData = await db.select({
+        id: levels.id,
+        name: levels.name,
+        slug: levels.slug
+      }).from(levels);
+    } catch (err) {
+      console.error('Error fetching levels:', err);
+    }
     
-    // إضافة تسجيل تفصيلي للتشخيص
-    console.log('DEBUG - قبل تحضير البيانات للإرجاع');
-    console.log('DEBUG - result structure:', JSON.stringify(result).substring(0, 100) + '...');
+    // معالجة بيانات المنح الدراسية وإضافة المعلومات المرتبطة
+    let scholarshipsWithDetails = [];
     
-    // تحضير البيانات للإرجاع
-    const scholarshipsWithDetails = await Promise.all(
-      result.map(async (scholarship) => {
-        console.log('DEBUG - scholarship id:', scholarship.id);
-        let category = null;
-        let country = null;
-        let level = null;
-        
-        if (scholarship.categoryId) {
+    try {
+      scholarshipsWithDetails = await Promise.all(
+        result.map(async (scholarship) => {
           try {
-            const categoryData = await db.select({
-              id: categories.id,
-              name: categories.name,
-              slug: categories.slug,
-              description: categories.description
-            })
-            .from(categories)
-            .where(sql`${categories.id} = ${scholarship.categoryId}`)
-            .limit(1);
+            // تعريف المتغيرات
+            let categoryInfo = null;
+            let countryInfo = null;
+            let levelInfo = null;
             
-            if (categoryData.length > 0) {
-              category = categoryData[0];
+            // جلب معلومات الفئة إذا كانت موجودة
+            if (scholarship.categoryId) {
+              try {
+                const categoryData = await db.select({
+                  id: categories.id,
+                  name: categories.name,
+                  slug: categories.slug
+                })
+                .from(categories)
+                .where(sql`${categories.id} = ${scholarship.categoryId}`)
+                .limit(1);
+                
+                if (categoryData.length > 0) {
+                  categoryInfo = categoryData[0];
+                }
+              } catch (error) {
+                console.error('Error fetching category info:', error);
+              }
             }
-          } catch (error) {
-            console.error('Error fetching category info for scholarship:', error);
-            // الاستمرار بدون معلومات التصنيف إذا حدث خطأ
+            
+            // جلب معلومات البلد إذا كانت موجودة
+            if (scholarship.countryId) {
+              try {
+                const countryData = await db.select({
+                  id: countries.id,
+                  name: countries.name,
+                  slug: countries.slug
+                })
+                .from(countries)
+                .where(sql`${countries.id} = ${scholarship.countryId}`)
+                .limit(1);
+                
+                if (countryData.length > 0) {
+                  countryInfo = {
+                    ...countryData[0],
+                    flagUrl: null
+                  };
+                }
+              } catch (error) {
+                console.error('Error fetching country info:', error);
+              }
+            }
+            
+            // جلب معلومات المستوى إذا كان موجوداً
+            if (scholarship.levelId) {
+              try {
+                const levelData = await db.select({
+                  id: levels.id,
+                  name: levels.name,
+                  slug: levels.slug
+                })
+                .from(levels)
+                .where(sql`${levels.id} = ${scholarship.levelId}`)
+                .limit(1);
+                
+                if (levelData.length > 0) {
+                  levelInfo = levelData[0];
+                }
+              } catch (error) {
+                console.error('Error fetching level info:', error);
+              }
+            }
+            
+            // تحضير الصورة المصغرة
+            let thumbnailUrl = '/images/default-scholarship.png'; // قيمة افتراضية
+            if (scholarship.imageUrl) {
+              thumbnailUrl = scholarship.imageUrl;
+            }
+            
+            // إنشاء كائن المنحة النهائي مع المعلومات الإضافية
+            return {
+              id: scholarship.id,
+              title: scholarship.title || '',
+              slug: scholarship.slug || '',
+              description: scholarship.description || '',
+              content: scholarship.content || '',
+              deadline: scholarship.deadline || null,
+              amount: scholarship.amount || null,
+              currency: scholarship.currency || null,
+              university: scholarship.university || null,
+              department: scholarship.department || null,
+              isFeatured: scholarship.isFeatured || false,
+              isFullyFunded: scholarship.isFullyFunded || false,
+              thumbnailUrl: thumbnailUrl,
+              createdAt: scholarship.createdAt || new Date(),
+              updatedAt: scholarship.updatedAt || new Date(),
+              category: categoryInfo,
+              country: countryInfo,
+              level: levelInfo
+            };
+          } catch (mapError) {
+            console.error('Error processing scholarship:', mapError);
+            // إرجاع كائن بسيط في حالة حدوث خطأ
+            return {
+              id: scholarship.id,
+              title: scholarship.title || '',
+              slug: scholarship.slug || '',
+              thumbnailUrl: '/images/default-scholarship.png'
+            };
+          }
+        })
+      );
+    } catch (transformError) {
+      console.error('Error transforming scholarships data:', transformError);
+    }
+    
+    // تسجيل معلومات تشخيصية
+    console.log('DEBUG - scholarshipsWithDetails.length:', scholarshipsWithDetails.length);
+    console.log('DEBUG - categoriesData.length:', categoriesData.length);
+    console.log('DEBUG - countriesWithFlag.length:', countriesWithFlag.length);
+    console.log('DEBUG - levelsData.length:', levelsData.length);
+    
+    // إنشاء وإرسال الاستجابة
+    try {
+      const responseData = {
+        success: true,
+        scholarships: scholarshipsWithDetails,
+        meta: {
+          pagination: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+          },
+          filters: {
+            categories: categoriesData,
+            countries: countriesWithFlag,
+            levels: levelsData
           }
         }
-        
-        if (scholarship.countryId) {
-          try {
-            // تجنب استخدام حقل flagUrl مباشرة وجلب الحقول المحددة فقط
-            const countryData = await db.select({
-              id: countries.id,
-              name: countries.name,
-              slug: countries.slug
-            })
-            .from(countries)
-            .where(sql`${countries.id} = ${scholarship.countryId}`)
-            .limit(1);
-            
-            if (countryData.length > 0) {
-              // إضافة حقل flagUrl = null لتجنب الأخطاء
-              country = {
-                ...countryData[0],
-                flagUrl: null // إضافة حقل افتراضي للعلم
-              };
-            }
-          } catch (error) {
-            console.error('Error fetching country info for scholarship:', error);
-            // الاستمرار بدون معلومات البلد إذا حدث خطأ
+      };
+      
+      res.status(200).json(responseData);
+      console.log('DEBUG - تم إرسال الاستجابة بنجاح');
+    } catch (serializeError) {
+      console.error('DEBUG - خطأ في تسلسل الاستجابة JSON:', serializeError);
+      
+      // إرسال استجابة بديلة في حالة الفشل
+      res.status(200).json({
+        success: true,
+        scholarships: [],
+        meta: {
+          pagination: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+          },
+          filters: {
+            categories: [],
+            countries: [],
+            levels: []
           }
         }
-        
-        if (scholarship.levelId) {
-          try {
-            const levelData = await db.select({
-              id: levels.id,
-              name: levels.name,
-              slug: levels.slug
-            })
-            .from(levels)
-            .where(sql`${levels.id} = ${scholarship.levelId}`)
-            .limit(1);
-            
-            if (levelData.length > 0) {
-              level = levelData[0];
-            }
-          } catch (error) {
-            console.error('Error fetching level info for scholarship:', error);
-            // الاستمرار بدون معلومات المستوى إذا حدث خطأ
-          }
-        }
-        
-        // معالجة مشكلة الصورة. استخدام imageUrl أو عرض صورة افتراضية عند عدم وجود أي صورة
-        let thumbnailUrl = '/images/default-scholarship.png'; // حقل افتراضي
-        
-        if (scholarship.imageUrl) {
-          thumbnailUrl = scholarship.imageUrl;
-        }
-        
-        // إنشاء كائن جديد بدلاً من استخدام ...scholarship لتجنب مشاكل الأنواع
-        return {
-          id: scholarship.id,
-          title: scholarship.title || '',
-          slug: scholarship.slug || '',
-          description: scholarship.description || '',
-          content: scholarship.content || '',
-          deadline: scholarship.deadline || null,
-          amount: scholarship.amount || null,
-          currency: scholarship.currency || null,
-          university: scholarship.university || null,
-          department: scholarship.department || null,
-          isFeatured: scholarship.isFeatured || false,
-          isFullyFunded: scholarship.isFullyFunded || false,
-          thumbnailUrl: thumbnailUrl,
-          createdAt: scholarship.createdAt || new Date(),
-          updatedAt: scholarship.updatedAt || new Date(),
-          category,
-          country,
-          level
-        };
-      })
-    );
-    
-    // الرد بالبيانات
-    res.status(200).json({
-      success: true,
-      scholarships: scholarshipsWithDetails,
-      meta: {
-        pagination: {
-          total,
-          page,
-          limit,
-          totalPages: Math.ceil(total / limit)
-        },
-        filters: {
-          categories: categoriesData,
-          countries: countriesWithFlag,
-          levels: levelsData
-        }
-      }
-    });
+      });
+    }
   } catch (error) {
     console.error('API Error:', error);
+    
+    // إرسال استجابة خطأ
     res.status(500).json({
       success: false,
       message: 'حدث خطأ أثناء جلب قائمة المنح الدراسية',
