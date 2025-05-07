@@ -209,9 +209,13 @@ export const getServerSideProps: GetServerSideProps = async ({ params, query }) 
     const page = parseInt(query.page as string || '1', 10);
     const limit = parseInt(query.limit as string || '9', 10);
 
+    // تحديد عنوان URL الكامل للواجهة البرمجية
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 
+                   (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000');
+    
     // جلب تفاصيل الدولة والمنح المرتبطة بها
     const apiUrl = `/api/countries/${slug}?page=${page}&limit=${limit}`;
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}${apiUrl}`);
+    const res = await fetch(`${baseUrl}${apiUrl}`);
     const data = await res.json();
 
     // التحقق من الاستجابة

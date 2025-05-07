@@ -169,8 +169,13 @@ export const getServerSideProps: GetServerSideProps = async ({ query }) => {
       apiUrl += `&search=${encodeURIComponent(search)}`;
     }
 
+    // تحديد عنوان URL الكامل للواجهة البرمجية
+    // استخدام window.location.origin في بيئة المتصفح وعنوان السيرفر في بيئة الخادم
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 
+                   (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000');
+    
     // جلب البيانات من واجهة برمجة التطبيقات
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}${apiUrl}`);
+    const res = await fetch(`${baseUrl}${apiUrl}`);
     const data = await res.json();
 
     // التحقق من الاستجابة
