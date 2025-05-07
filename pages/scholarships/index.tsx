@@ -226,22 +226,33 @@ export const getServerSideProps: GetServerSideProps = async ({ query }) => {
     const sortBy = query.sortBy as string | undefined;
     
     // بناء استعلام API
-    const apiUrl = `${process.env.NEXT_PUBLIC_SITE_URL || ''}/api/scholarships`;
-    const queryParams = new URLSearchParams();
+    let host = '';
+    if (typeof window === 'undefined') {
+      // نحن في بيئة الخادم، ونستخدم عنوان محلي
+      host = 'http://localhost:5000';
+    }
     
-    if (page) queryParams.append('page', page.toString());
-    if (limit) queryParams.append('limit', limit.toString());
-    if (search) queryParams.append('search', search);
-    if (category) queryParams.append('category', category);
-    if (country) queryParams.append('country', country);
-    if (level) queryParams.append('level', level);
-    if (fundingType) queryParams.append('fundingType', fundingType);
-    if (sortBy) queryParams.append('sortBy', sortBy);
+    let queryString = '';
     
-    const apiUrlWithParams = `${apiUrl}?${queryParams.toString()}`;
+    // بناء سلسلة الاستعلام يدويًا
+    const params = [];
+    if (page) params.push(`page=${page}`);
+    if (limit) params.push(`limit=${limit}`);
+    if (search) params.push(`search=${encodeURIComponent(search)}`);
+    if (category) params.push(`category=${encodeURIComponent(category)}`);
+    if (country) params.push(`country=${encodeURIComponent(country)}`);
+    if (level) params.push(`level=${encodeURIComponent(level)}`);
+    if (fundingType) params.push(`fundingType=${encodeURIComponent(fundingType)}`);
+    if (sortBy) params.push(`sortBy=${encodeURIComponent(sortBy)}`);
+    
+    if (params.length > 0) {
+      queryString = `?${params.join('&')}`;
+    }
+    
+    const apiUrl = `${host}/api/scholarships${queryString}`;
     
     // استدعاء API
-    const response = await fetch(apiUrlWithParams);
+    const response = await fetch(apiUrl);
     
     if (!response.ok) {
       throw new Error(`حدث خطأ أثناء جلب المنح الدراسية: ${response.status}`);

@@ -3,6 +3,17 @@ import { db } from '@/db';
 import { scholarships, categories, countries, levels } from '@/shared/schema';
 import { eq, sql } from 'drizzle-orm';
 
+// إضافة وظيفة تسجيل الأخطاء للتشخيص
+function logError(error: any, context: string) {
+  console.error(`Error in ${context}:`, error);
+  if (error instanceof Error) {
+    console.error(`  Message: ${error.message}`);
+    console.error(`  Stack: ${error.stack}`);
+  } else {
+    console.error(`  Unknown error type:`, error);
+  }
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const slug = req.query.slug as string;
@@ -28,10 +39,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     const scholarship = scholarshipData[0];
     
-    // زيادة عدد المشاهدات
-    await db.update(scholarships)
-      .set({ views: sql`${scholarships.views} + 1` })
-      .where(eq(scholarships.id, scholarship.id));
+    // ملاحظة: لا يوجد عمود views في جدول المنح الدراسية
+    // لذلك تم تعطيل هذا الجزء مؤقتًا
+    // إذا كان هناك حاجة لتتبع المشاهدات، يمكن إضافة العمود لاحقًا
     
     // الحصول على معلومات إضافية
     let categoryInfo = null;
@@ -114,7 +124,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       relatedScholarships
     });
   } catch (error) {
-    console.error('Error fetching scholarship details:', error);
+    logError(error, 'scholarship details api');
     
     return res.status(500).json({
       success: false,
