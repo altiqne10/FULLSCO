@@ -45,8 +45,28 @@ export default async function handler(
     // حساب الصفحة الحالية والحد
     const offset = (page - 1) * limit;
     
-    // بناء استعلام أساسي
-    let query = db.select().from(scholarships);
+    // بناء استعلام أساسي مع تحديد الحقول المطلوبة
+    let query = db.select({
+      id: scholarships.id,
+      title: scholarships.title,
+      slug: scholarships.slug,
+      description: scholarships.description,
+      content: scholarships.content,
+      amount: scholarships.amount,
+      currency: scholarships.currency,
+      university: scholarships.university,
+      department: scholarships.department,
+      isFeatured: scholarships.isFeatured,
+      isFullyFunded: scholarships.isFullyFunded,
+      imageUrl: scholarships.imageUrl,
+      deadline: scholarships.deadline,
+      categoryId: scholarships.categoryId,
+      countryId: scholarships.countryId,
+      levelId: scholarships.levelId,
+      createdAt: scholarships.createdAt,
+      updatedAt: scholarships.updatedAt,
+      isPublished: scholarships.isPublished
+    }).from(scholarships);
     
     // تطبيق الفلاتر
     if (search) {
@@ -77,8 +97,12 @@ export default async function handler(
       }
     }
     
-    if (fundingType) {
-      query = query.where(sql`${scholarships.fundingType} = ${fundingType}`);
+    // تعليق استعلام نوع التمويل حيث أنه غير متوفر في الهيكلية الحالية
+    // التحقق من وجود isFullyFunded بدلاً منه
+    if (fundingType === 'fully-funded') {
+      query = query.where(sql`${scholarships.isFullyFunded} = true`);
+    } else if (fundingType === 'partial') {
+      query = query.where(sql`${scholarships.isFullyFunded} = false`);
     }
     
     // تطبيق الترتيب
@@ -144,32 +168,95 @@ export default async function handler(
         let level = null;
         
         if (scholarship.categoryId) {
-          const categoryData = await db.select().from(categories).where(sql`${categories.id} = ${scholarship.categoryId}`).limit(1);
-          if (categoryData.length > 0) {
-            category = categoryData[0];
+          try {
+            const categoryData = await db.select({
+              id: categories.id,
+              name: categories.name,
+              slug: categories.slug,
+              description: categories.description
+            })
+            .from(categories)
+            .where(sql`${categories.id} = ${scholarship.categoryId}`)
+            .limit(1);
+            
+            if (categoryData.length > 0) {
+              category = categoryData[0];
+            }
+          } catch (error) {
+            console.error('Error fetching category info for scholarship:', error);
+            // الاستمرار بدون معلومات التصنيف إذا حدث خطأ
           }
         }
         
         if (scholarship.countryId) {
-          const countryData = await db.select().from(countries).where(sql`${countries.id} = ${scholarship.countryId}`).limit(1);
-          if (countryData.length > 0) {
-            country = countryData[0];
+          try {
+            // تجنب استخدام حقل flagUrl مباشرة وجلب الحقول المحددة فقط
+            const countryData = await db.select({
+              id: countries.id,
+              name: countries.name,
+              slug: countries.slug
+            })
+            .from(countries)
+            .where(sql`${countries.id} = ${scholarship.countryId}`)
+            .limit(1);
+            
+            if (countryData.length > 0) {
+              // إضافة حقل flagUrl = null لتجنب الأخطاء
+              country = {
+                ...countryData[0],
+                flagUrl: null // إضافة حقل افتراضي للعلم
+              };
+            }
+          } catch (error) {
+            console.error('Error fetching country info for scholarship:', error);
+            // الاستمرار بدون معلومات البلد إذا حدث خطأ
           }
         }
         
         if (scholarship.levelId) {
-          const levelData = await db.select().from(levels).where(sql`${levels.id} = ${scholarship.levelId}`).limit(1);
-          if (levelData.length > 0) {
-            level = levelData[0];
+          try {
+            const levelData = await db.select({
+              id: levels.id,
+              name: levels.name,
+              slug: levels.slug
+            })
+            .from(levels)
+            .where(sql`${levels.id} = ${scholarship.levelId}`)
+            .limit(1);
+            
+            if (levelData.length > 0) {
+              level = levelData[0];
+            }
+          } catch (error) {
+            console.error('Error fetching level info for scholarship:', error);
+            // الاستمرار بدون معلومات المستوى إذا حدث خطأ
           }
         }
         
-        // تعديل اسم حقل الصورة إذا كان موجودًا
-        const thumbnailUrl = scholarship.imageUrl || scholarship.thumbnailUrl;
+        // معالجة مشكلة الصورة. استخدام imageUrl أو عرض صورة افتراضية عند عدم وجود أي صورة
+        let thumbnailUrl = '/images/default-scholarship.png'; // حقل افتراضي
         
+        if (scholarship.imageUrl) {
+          thumbnailUrl = scholarship.imageUrl;
+        }
+        
+        // إنشاء كائن جديد بدلاً من استخدام ...scholarship لتجنب مشاكل الأنواع
         return {
-          ...scholarship,
-          thumbnailUrl,
+          id: scholarship.id,
+          title: scholarship.title || '',
+          slug: scholarship.slug || '',
+          description: scholarship.description || '',
+          content: scholarship.content || '',
+          deadline: scholarship.deadline || null,
+          amount: scholarship.amount || null,
+          currency: scholarship.currency || null,
+          university: scholarship.university || null,
+          department: scholarship.department || null,
+          isFeatured: scholarship.isFeatured || false,
+          isFullyFunded: scholarship.isFullyFunded || false,
+          thumbnailUrl: thumbnailUrl,
+          createdAt: scholarship.createdAt || new Date(),
+          updatedAt: scholarship.updatedAt || new Date(),
           category,
           country,
           level
@@ -190,7 +277,7 @@ export default async function handler(
         },
         filters: {
           categories: categoriesData,
-          countries: countriesData,
+          countries: countriesWithFlag,
           levels: levelsData
         }
       }
