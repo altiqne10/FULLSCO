@@ -1,15 +1,15 @@
 import { db } from "../db";
 import { eq } from "drizzle-orm";
-import { Table } from 'drizzle-orm/pg-core';
+import { PgTable } from 'drizzle-orm/pg-core';
 
 /**
  * Repository أساسي يوفر عمليات CRUD العامة
  */
 export class BaseRepository<T, InsertT> {
-  protected table: Table;
+  protected table: PgTable;
   protected idColumn: any;
 
-  constructor(table: Table, idColumn: any) {
+  constructor(table: PgTable, idColumn: any) {
     this.table = table;
     this.idColumn = idColumn;
   }
@@ -20,12 +20,14 @@ export class BaseRepository<T, InsertT> {
   async findAll(filters: Record<string, any> = {}): Promise<T[]> {
     let query = db.select().from(this.table);
 
-    // تطبيق الفلاتر إذا تم تمريرها
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && this.table[key]) {
-        query = query.where(eq(this.table[key], value));
-      }
-    });
+    // تطبيق الفلاتر إذا تم تمريرها وكانت غير فارغة
+    if (filters && typeof filters === 'object') {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && this.table[key]) {
+          query = query.where(eq(this.table[key], value));
+        }
+      });
+    }
 
     return query as Promise<T[]>;
   }

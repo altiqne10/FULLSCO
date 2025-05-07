@@ -42,15 +42,19 @@ export class SiteSettingsController {
       
       // معالجة القيم المنطقية (Boolean)
       // الأصل: تحويل القيم النصية من واجهة المستخدم إلى قيم منطقية
-      const processedData = Object.entries(validatedData).reduce((result, [key, value]) => {
-        // للتعامل مع القيم المنطقية المرسلة كنصوص
-        if (typeof value === 'string' && (value === 'true' || value === 'false')) {
-          result[key] = value === 'true';
-        } else {
-          result[key] = value;
-        }
-        return result;
-      }, {} as Record<string, any>);
+      let processedData: Record<string, any> = {};
+      
+      if (validatedData && typeof validatedData === 'object') {
+        processedData = Object.entries(validatedData).reduce((result, [key, value]) => {
+          // للتعامل مع القيم المنطقية المرسلة كنصوص
+          if (typeof value === 'string' && (value === 'true' || value === 'false')) {
+            result[key] = value === 'true';
+          } else {
+            result[key] = value;
+          }
+          return result;
+        }, {} as Record<string, any>);
+      }
       
       console.log('Updating site settings with data:', processedData);
       
